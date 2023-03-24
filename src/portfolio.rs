@@ -38,7 +38,7 @@ pub enum CurrencyValidationError {
 }
 
 // a Lot an amount of securities purchased as a particular time
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Lot {
     // the account within the lot is held
     account: String,
@@ -60,6 +60,8 @@ pub struct Lot {
 impl Lot {
     const MIN_ACCOUNT_LEN: usize = 1;
     const MAX_ACCOUNT_LEN: usize = 100;
+
+    const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
     pub fn new(
@@ -69,9 +71,10 @@ impl Lot {
         quantity: u32,
         cost_basis: Currency,
     ) -> Result<Lot, LotValidationError> {
+        let account = account.trim().to_string();
         if account.len() < Lot::MIN_ACCOUNT_LEN {
             return Err(LotValidationError::AccountToShort {
-                min: Lot::MAX_ACCOUNT_LEN,
+                min: Lot::MIN_ACCOUNT_LEN,
                 actual: account.len(),
             });
         }
@@ -79,6 +82,13 @@ impl Lot {
             return Err(LotValidationError::AccountToLong {
                 max: Lot::MAX_ACCOUNT_LEN,
                 actual: account.len(),
+            });
+        }
+        let symbol = symbol.trim().to_string();
+        if symbol.len() < Lot::MIN_SYMBOL_LEN {
+            return Err(LotValidationError::SymbolToShort {
+                min: Lot::MIN_SYMBOL_LEN,
+                actual: symbol.len(),
             });
         }
         if symbol.len() > Lot::MAX_SYMBOL_LEN {
@@ -97,52 +107,187 @@ impl Lot {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LotValidationError {
     AccountToShort { min: usize, actual: usize },
     AccountToLong { max: usize, actual: usize },
+    SymbolToShort { min: usize, actual: usize },
     SymbolToLong { max: usize, actual: usize },
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::portfolio::{Currency, CurrencyValidationError};
+    use crate::portfolio::{Currency, CurrencyValidationError, Lot, LotValidationError};
+    use chrono::naive::NaiveDate;
+
+    // Currency Tests
 
     #[test]
     fn currency_new() {
         assert_eq!(
-            Currency {
+            Ok(Currency {
                 amount: 1,
                 symbol: String::from("USD")
-            },
-            Currency::new(1, String::from("USD")).unwrap()
+            }),
+            Currency::new(1, String::from("USD"))
         )
     }
 
     #[test]
     fn currency_new_symbol_with_whitespace() {
         assert_eq!(
-            Currency {
+            Ok(Currency {
                 amount: 1,
                 symbol: String::from("USD")
-            },
-            Currency::new(1, String::from(" USD ")).unwrap()
+            }),
+            Currency::new(1, String::from(" USD "))
         )
     }
 
     #[test]
     fn currency_new_symbol_too_short() {
         assert_eq!(
-            CurrencyValidationError::SymbolToShort { min: 1, actual: 0 },
-            Currency::new(1, String::from("")).err().unwrap()
+            Err(CurrencyValidationError::SymbolToShort { min: 1, actual: 0 }),
+            Currency::new(1, String::from(""))
         );
     }
 
     #[test]
     fn currency_new_symbol_too_long() {
         assert_eq!(
-            CurrencyValidationError::SymbolToLong { max: 5, actual: 10 },
-            Currency::new(1, String::from("US Dollars")).err().unwrap()
+            Err(CurrencyValidationError::SymbolToLong { max: 5, actual: 10 }),
+            Currency::new(1, String::from("US Dollars"))
         );
+    }
+
+    // Lot tests
+
+    #[test]
+    fn lot_new_valid() {
+        assert_eq!(
+            Ok(Lot {
+                account: String::from("Taxable"),
+                symbol: String::from("VOO"),
+                date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                quantity: 6,
+                cost_basis: Currency {
+                    amount: 30064,
+                    symbol: String::from("USD")
+                }
+            }),
+            Lot::new(
+                String::from("Taxable"),
+                String::from("VOO"),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
+    }
+
+    #[test]
+    fn lot_new_account_with_whitespace() {
+        assert_eq!(
+            Ok(Lot {
+                account: String::from("Taxable"),
+                symbol: String::from("VOO"),
+                date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                quantity: 6,
+                cost_basis: Currency {
+                    amount: 30064,
+                    symbol: String::from("USD")
+                }
+            }),
+            Lot::new(
+                String::from(" Taxable "),
+                String::from("VOO"),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
+    }
+
+    #[test]
+    fn lot_new_symbol_with_whitespace() {
+        assert_eq!(
+            Ok(Lot {
+                account: String::from("Taxable"),
+                symbol: String::from("VOO"),
+                date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                quantity: 6,
+                cost_basis: Currency {
+                    amount: 30064,
+                    symbol: String::from("USD")
+                }
+            }),
+            Lot::new(
+                String::from("Taxable"),
+                String::from(" VOO "),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
+    }
+
+    #[test]
+    fn lot_new_account_too_short() {
+        assert_eq!(
+            Err(LotValidationError::AccountToShort { min: 1, actual: 0 }),
+            Lot::new(
+                String::from(""),
+                String::from("VOO"),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
+    }
+
+    #[test]
+    fn lot_new_account_too_long() {
+        let account: String = (0..101).map(|_| "X").collect();
+        assert_eq!(
+            Err(LotValidationError::AccountToLong {
+                max: 100,
+                actual: 101
+            }),
+            Lot::new(
+                account,
+                String::from("VOO"),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
+    }
+
+    #[test]
+    fn lot_new_symbol_too_short() {
+        assert_eq!(
+            Err(LotValidationError::SymbolToShort { min: 1, actual: 0 }),
+            Lot::new(
+                String::from("Taxable"),
+                String::from(""),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
+    }
+
+    #[test]
+    fn lot_new_symbol_too_long() {
+        assert_eq!(
+            Err(LotValidationError::SymbolToLong { max: 5, actual: 6 }),
+            Lot::new(
+                String::from("Taxable"),
+                String::from("VOODOO"),
+                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                6,
+                Currency::new(30064, String::from("USD")).unwrap()
+            )
+        )
     }
 }
