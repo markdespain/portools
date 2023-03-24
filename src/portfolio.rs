@@ -1,6 +1,20 @@
 use chrono::naive::NaiveDate;
 
 #[derive(Debug, PartialEq)]
+pub enum ValidationError {
+    FieldToShort {
+        field: String,
+        min: usize,
+        actual: usize,
+    },
+    FieldToLong {
+        field: String,
+        max: usize,
+        actual: usize,
+    },
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Currency {
     // the amount of the currency in its minor units (e.g. cents for "USD")
     amount: u64,
@@ -13,28 +27,24 @@ impl Currency {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
-    pub fn new(amount: u64, symbol: String) -> Result<Currency, CurrencyValidationError> {
+    pub fn new(amount: u64, symbol: String) -> Result<Currency, ValidationError> {
         let symbol = symbol.trim().to_string();
         if symbol.len() < Currency::MIN_SYMBOL_LEN {
-            return Err(CurrencyValidationError::SymbolToShort {
+            return Err(ValidationError::FieldToShort {
+                field: String::from("symbol"),
                 min: Currency::MIN_SYMBOL_LEN,
                 actual: symbol.len(),
             });
         }
         if symbol.len() > Currency::MAX_SYMBOL_LEN {
-            return Err(CurrencyValidationError::SymbolToLong {
+            return Err(ValidationError::FieldToLong {
+                field: String::from("symbol"),
                 max: Currency::MAX_SYMBOL_LEN,
                 actual: symbol.len(),
             });
         }
         Ok(Currency { amount, symbol })
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum CurrencyValidationError {
-    SymbolToShort { min: usize, actual: usize },
-    SymbolToLong { max: usize, actual: usize },
 }
 
 // a Lot an amount of securities purchased as a particular time
@@ -70,29 +80,33 @@ impl Lot {
         date: NaiveDate,
         quantity: u32,
         cost_basis: Currency,
-    ) -> Result<Lot, LotValidationError> {
+    ) -> Result<Lot, ValidationError> {
         let account = account.trim().to_string();
         if account.len() < Lot::MIN_ACCOUNT_LEN {
-            return Err(LotValidationError::AccountToShort {
+            return Err(ValidationError::FieldToShort {
+                field: String::from("account"),
                 min: Lot::MIN_ACCOUNT_LEN,
                 actual: account.len(),
             });
         }
         if account.len() > Lot::MAX_ACCOUNT_LEN {
-            return Err(LotValidationError::AccountToLong {
+            return Err(ValidationError::FieldToLong {
+                field: String::from("account"),
                 max: Lot::MAX_ACCOUNT_LEN,
                 actual: account.len(),
             });
         }
         let symbol = symbol.trim().to_string();
         if symbol.len() < Lot::MIN_SYMBOL_LEN {
-            return Err(LotValidationError::SymbolToShort {
+            return Err(ValidationError::FieldToShort {
+                field: String::from("symbol"),
                 min: Lot::MIN_SYMBOL_LEN,
                 actual: symbol.len(),
             });
         }
         if symbol.len() > Lot::MAX_SYMBOL_LEN {
-            return Err(LotValidationError::SymbolToLong {
+            return Err(ValidationError::FieldToLong {
+                field: String::from("symbol"),
                 max: Lot::MAX_SYMBOL_LEN,
                 actual: symbol.len(),
             });
@@ -107,17 +121,9 @@ impl Lot {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum LotValidationError {
-    AccountToShort { min: usize, actual: usize },
-    AccountToLong { max: usize, actual: usize },
-    SymbolToShort { min: usize, actual: usize },
-    SymbolToLong { max: usize, actual: usize },
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::portfolio::{Currency, CurrencyValidationError, Lot, LotValidationError};
+    use crate::portfolio::{Currency, Lot, ValidationError};
     use chrono::naive::NaiveDate;
 
     // Currency Tests
@@ -147,7 +153,11 @@ mod tests {
     #[test]
     fn currency_new_symbol_too_short() {
         assert_eq!(
-            Err(CurrencyValidationError::SymbolToShort { min: 1, actual: 0 }),
+            Err(ValidationError::FieldToShort {
+                field: String::from("symbol"),
+                min: 1,
+                actual: 0
+            }),
             Currency::new(1, String::from(""))
         );
     }
@@ -155,7 +165,11 @@ mod tests {
     #[test]
     fn currency_new_symbol_too_long() {
         assert_eq!(
-            Err(CurrencyValidationError::SymbolToLong { max: 5, actual: 10 }),
+            Err(ValidationError::FieldToLong {
+                field: String::from("symbol"),
+                max: 5,
+                actual: 10
+            }),
             Currency::new(1, String::from("US Dollars"))
         );
     }
@@ -234,7 +248,11 @@ mod tests {
     #[test]
     fn lot_new_account_too_short() {
         assert_eq!(
-            Err(LotValidationError::AccountToShort { min: 1, actual: 0 }),
+            Err(ValidationError::FieldToShort {
+                field: String::from("account"),
+                min: 1,
+                actual: 0
+            }),
             Lot::new(
                 String::from(""),
                 String::from("VOO"),
@@ -249,7 +267,8 @@ mod tests {
     fn lot_new_account_too_long() {
         let account: String = (0..101).map(|_| "X").collect();
         assert_eq!(
-            Err(LotValidationError::AccountToLong {
+            Err(ValidationError::FieldToLong {
+                field: String::from("account"),
                 max: 100,
                 actual: 101
             }),
@@ -266,7 +285,11 @@ mod tests {
     #[test]
     fn lot_new_symbol_too_short() {
         assert_eq!(
-            Err(LotValidationError::SymbolToShort { min: 1, actual: 0 }),
+            Err(ValidationError::FieldToShort {
+                field: String::from("symbol"),
+                min: 1,
+                actual: 0
+            }),
             Lot::new(
                 String::from("Taxable"),
                 String::from(""),
@@ -280,7 +303,11 @@ mod tests {
     #[test]
     fn lot_new_symbol_too_long() {
         assert_eq!(
-            Err(LotValidationError::SymbolToLong { max: 5, actual: 6 }),
+            Err(ValidationError::FieldToLong {
+                field: String::from("symbol"),
+                max: 5,
+                actual: 6
+            }),
             Lot::new(
                 String::from("Taxable"),
                 String::from("VOODOO"),
