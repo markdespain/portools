@@ -1,6 +1,6 @@
-mod lot;
+mod portfolio;
 
-use crate::lot::Lot;
+use crate::portfolio::Lot;
 
 fn main() {
     let lot = Lot::new(
