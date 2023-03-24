@@ -1,3 +1,4 @@
+use chrono::naive::NaiveDate;
 use std::fmt::Error;
 
 const MAX_ACCOUNT_LEN: usize = 100;
@@ -13,8 +14,7 @@ pub struct Lot {
     symbol: String,
 
     // the date that the lot was purchased
-    // TOOD: replace with a better "data" data type
-    date: String,
+    date: NaiveDate,
 
     // the number of shares of the security in this lot
     quantity: u32,
@@ -29,7 +29,7 @@ impl Lot {
     pub fn new(
         account: String,
         symbol: String,
-        date: String,
+        date: NaiveDate,
         quantity: u32,
         cost_basis: f32,
     ) -> Result<Lot, ValidationError> {

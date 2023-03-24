@@ -1,4 +1,5 @@
 mod portfolio;
+use chrono::naive::NaiveDate;
 
 use crate::portfolio::Lot;
 
@@ -6,7 +7,7 @@ fn main() {
     let lot = Lot::new(
         String::from("Joint Taxable"),
         String::from("VOO"),
-        String::from("2023/03/23"),
+        NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
         6,
         321.55,
     );
