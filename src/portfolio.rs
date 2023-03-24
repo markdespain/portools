@@ -1,4 +1,5 @@
 use chrono::naive::NaiveDate;
+use serde::Serialize;
 
 #[derive(Debug, PartialEq)]
 pub enum ValidationError {
@@ -14,7 +15,7 @@ pub enum ValidationError {
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Currency {
     // the amount of the currency in its minor units (e.g. cents for "USD")
     amount: u64,
@@ -48,7 +49,7 @@ impl Currency {
 }
 
 // a Lot an amount of securities purchased as a particular time
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Lot {
     // the account within the lot is held
     account: String,
