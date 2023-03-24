@@ -1,8 +1,32 @@
 use chrono::naive::NaiveDate;
-use std::fmt::Error;
 
-const MAX_ACCOUNT_LEN: usize = 100;
-const MAX_SYMBOL_LEN: usize = 5;
+#[derive(Debug)]
+pub struct Currency {
+    // the amount of the currency in its minor units (e.g. cents for "USD")
+    amount: u64,
+
+    // the symbol for the currency (e.g. "USD")
+    symbol: String,
+}
+
+impl Currency {
+    const MAX_SYMBOL_LEN: usize = 5;
+
+    pub fn new(amount: u64, symbol: String) -> Result<Currency, CurrencyValidationError> {
+        if symbol.len() > Currency::MAX_SYMBOL_LEN {
+            return Err(CurrencyValidationError::SymbolToLong {
+                max: Currency::MAX_SYMBOL_LEN,
+                actual: symbol.len(),
+            });
+        }
+        Ok(Currency { amount, symbol })
+    }
+}
+
+#[derive(Debug)]
+pub enum CurrencyValidationError {
+    SymbolToLong { max: usize, actual: usize },
+}
 
 // a Lot an amount of securities purchased as a particular time
 #[derive(Debug)]
@@ -20,33 +44,32 @@ pub struct Lot {
     quantity: u32,
 
     // the per-share cost purchase price of this lot
-    // TOOD: add validation (can't be negative, infinity, NaN, etc.)
-    // TODO: replace with "money" type?
-    cost_basis: f32,
+    // TOOD: add validation
+    cost_basis: Currency,
 }
 
 impl Lot {
+    const MAX_ACCOUNT_LEN: usize = 100;
+    const MAX_SYMBOL_LEN: usize = 5;
+
     pub fn new(
         account: String,
         symbol: String,
         date: NaiveDate,
         quantity: u32,
-        cost_basis: f32,
-    ) -> Result<Lot, ValidationError> {
-        if account.len() > MAX_ACCOUNT_LEN {
-            return Err(ValidationError::AccountNameToLong {
-                max: MAX_ACCOUNT_LEN,
+        cost_basis: Currency,
+    ) -> Result<Lot, LotValidationError> {
+        if account.len() > Lot::MAX_ACCOUNT_LEN {
+            return Err(LotValidationError::AccountToLong {
+                max: Lot::MAX_ACCOUNT_LEN,
                 actual: account.len(),
             });
         }
-        if symbol.len() > MAX_SYMBOL_LEN {
-            return Err(ValidationError::SymbolToLong {
-                max: MAX_SYMBOL_LEN,
+        if symbol.len() > Lot::MAX_SYMBOL_LEN {
+            return Err(LotValidationError::SymbolToLong {
+                max: Lot::MAX_SYMBOL_LEN,
                 actual: symbol.len(),
             });
-        }
-        if !is_finite_non_neg(cost_basis) {
-            return Err(ValidationError::InvalidCostBasis { actual: cost_basis });
         }
         Ok(Lot {
             account,
@@ -58,13 +81,8 @@ impl Lot {
     }
 }
 
-fn is_finite_non_neg(v: f32) -> bool {
-    f32::is_finite(v) && v >= 0.0
-}
-
 #[derive(Debug)]
-pub enum ValidationError {
-    AccountNameToLong { max: usize, actual: usize },
+pub enum LotValidationError {
+    AccountToLong { max: usize, actual: usize },
     SymbolToLong { max: usize, actual: usize },
-    InvalidCostBasis { actual: f32 },
 }
