@@ -1,3 +1,8 @@
+use std::fmt::Error;
+
+const MAX_ACCOUNT_LEN: usize = 100;
+const MAX_SYMBOL_LEN: usize = 5;
+
 // a Lot an amount of securities purchased as a particular time
 #[derive(Debug)]
 pub struct Lot {
@@ -5,7 +10,6 @@ pub struct Lot {
     account: String,
 
     // the symbol of the security held
-    // TODO: create a type that has validation?
     symbol: String,
 
     // the date that the lot was purchased
@@ -28,13 +32,39 @@ impl Lot {
         date: String,
         quantity: u32,
         cost_basis: f32,
-    ) -> Lot {
-        Lot {
+    ) -> Result<Lot, ValidationError> {
+        if account.len() > MAX_ACCOUNT_LEN {
+            return Err(ValidationError::AccountNameToLong {
+                max: MAX_ACCOUNT_LEN,
+                actual: account.len(),
+            });
+        }
+        if symbol.len() > MAX_SYMBOL_LEN {
+            return Err(ValidationError::SymbolToLong {
+                max: MAX_SYMBOL_LEN,
+                actual: symbol.len(),
+            });
+        }
+        if !is_finite_non_neg(cost_basis) {
+            return Err(ValidationError::InvalidCostBasis { actual: cost_basis });
+        }
+        Ok(Lot {
             account,
             symbol,
             date,
             quantity,
             cost_basis,
-        }
+        })
     }
+}
+
+fn is_finite_non_neg(v: f32) -> bool {
+    f32::is_finite(v) && v >= 0.0
+}
+
+#[derive(Debug)]
+pub enum ValidationError {
+    AccountNameToLong { max: usize, actual: usize },
+    SymbolToLong { max: usize, actual: usize },
+    InvalidCostBasis { actual: f32 },
 }
