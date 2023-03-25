@@ -1,4 +1,6 @@
 mod portfolio;
+mod util;
+
 use crate::portfolio::{Currency, Lot};
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, Result};
 use chrono::naive::NaiveDate;

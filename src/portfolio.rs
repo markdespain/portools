@@ -1,19 +1,6 @@
+use crate::util::{ValidationError, *};
 use chrono::naive::NaiveDate;
 use serde::Serialize;
-
-#[derive(Debug, PartialEq)]
-pub enum ValidationError {
-    FieldToShort {
-        field: String,
-        min: usize,
-        actual: usize,
-    },
-    FieldToLong {
-        field: String,
-        max: usize,
-        actual: usize,
-    },
-}
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Currency {
@@ -29,21 +16,12 @@ impl Currency {
     const MAX_SYMBOL_LEN: usize = 5;
 
     pub fn new(amount: u64, symbol: String) -> Result<Currency, ValidationError> {
-        let symbol = symbol.trim().to_string();
-        if symbol.len() < Currency::MIN_SYMBOL_LEN {
-            return Err(ValidationError::FieldToShort {
-                field: String::from("symbol"),
-                min: Currency::MIN_SYMBOL_LEN,
-                actual: symbol.len(),
-            });
-        }
-        if symbol.len() > Currency::MAX_SYMBOL_LEN {
-            return Err(ValidationError::FieldToLong {
-                field: String::from("symbol"),
-                max: Currency::MAX_SYMBOL_LEN,
-                actual: symbol.len(),
-            });
-        }
+        let symbol = validate_and_trim(
+            String::from("symbol"),
+            symbol,
+            Currency::MIN_SYMBOL_LEN,
+            Currency::MAX_SYMBOL_LEN,
+        )?;
         Ok(Currency { amount, symbol })
     }
 }
@@ -82,36 +60,18 @@ impl Lot {
         quantity: u32,
         cost_basis: Currency,
     ) -> Result<Lot, ValidationError> {
-        let account = account.trim().to_string();
-        if account.len() < Lot::MIN_ACCOUNT_LEN {
-            return Err(ValidationError::FieldToShort {
-                field: String::from("account"),
-                min: Lot::MIN_ACCOUNT_LEN,
-                actual: account.len(),
-            });
-        }
-        if account.len() > Lot::MAX_ACCOUNT_LEN {
-            return Err(ValidationError::FieldToLong {
-                field: String::from("account"),
-                max: Lot::MAX_ACCOUNT_LEN,
-                actual: account.len(),
-            });
-        }
-        let symbol = symbol.trim().to_string();
-        if symbol.len() < Lot::MIN_SYMBOL_LEN {
-            return Err(ValidationError::FieldToShort {
-                field: String::from("symbol"),
-                min: Lot::MIN_SYMBOL_LEN,
-                actual: symbol.len(),
-            });
-        }
-        if symbol.len() > Lot::MAX_SYMBOL_LEN {
-            return Err(ValidationError::FieldToLong {
-                field: String::from("symbol"),
-                max: Lot::MAX_SYMBOL_LEN,
-                actual: symbol.len(),
-            });
-        }
+        let account = validate_and_trim(
+            String::from("account"),
+            account,
+            Lot::MIN_ACCOUNT_LEN,
+            Lot::MAX_ACCOUNT_LEN,
+        )?;
+        let symbol = validate_and_trim(
+            String::from("symbol"),
+            symbol,
+            Lot::MIN_SYMBOL_LEN,
+            Lot::MAX_SYMBOL_LEN,
+        )?;
         Ok(Lot {
             account,
             symbol,
