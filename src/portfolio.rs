@@ -1,6 +1,7 @@
-use crate::util::{ValidationError, *};
+use crate::util::{validate_and_trim, ValidationError};
 use chrono::naive::NaiveDate;
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Currency {
@@ -29,7 +30,10 @@ impl Currency {
 // a Lot an amount of securities purchased as a particular time
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Lot {
-    // the account within the lot is held
+    // ID of the owner of this lot
+    owner: Uuid,
+
+    // name of the brokerage account within the lot is held
     account: String,
 
     // the symbol of the security held
@@ -54,6 +58,7 @@ impl Lot {
     const MAX_SYMBOL_LEN: usize = 5;
 
     pub fn new(
+        owner: Uuid,
         account: String,
         symbol: String,
         date: NaiveDate,
@@ -73,6 +78,7 @@ impl Lot {
             Lot::MAX_SYMBOL_LEN,
         )?;
         Ok(Lot {
+            owner,
             account,
             symbol,
             date,
@@ -86,6 +92,9 @@ impl Lot {
 mod tests {
     use crate::portfolio::{Currency, Lot, ValidationError};
     use chrono::naive::NaiveDate;
+    use uuid::{uuid, Uuid};
+
+    const UID: Uuid = uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8");
 
     // Currency Tests
 
@@ -141,6 +150,7 @@ mod tests {
     fn lot_new_valid() {
         assert_eq!(
             Ok(Lot {
+                owner: UID,
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
                 date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -151,6 +161,7 @@ mod tests {
                 }
             }),
             Lot::new(
+                UID,
                 String::from("Taxable"),
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -164,6 +175,7 @@ mod tests {
     fn lot_new_account_with_whitespace() {
         assert_eq!(
             Ok(Lot {
+                owner: UID,
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
                 date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -174,6 +186,7 @@ mod tests {
                 }
             }),
             Lot::new(
+                UID,
                 String::from(" Taxable "),
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -187,6 +200,7 @@ mod tests {
     fn lot_new_symbol_with_whitespace() {
         assert_eq!(
             Ok(Lot {
+                owner: UID,
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
                 date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -197,6 +211,7 @@ mod tests {
                 }
             }),
             Lot::new(
+                UID,
                 String::from("Taxable"),
                 String::from(" VOO "),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -215,6 +230,7 @@ mod tests {
                 actual: 0
             }),
             Lot::new(
+                UID,
                 String::from(""),
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -234,6 +250,7 @@ mod tests {
                 actual: 101
             }),
             Lot::new(
+                UID,
                 account,
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -252,6 +269,7 @@ mod tests {
                 actual: 0
             }),
             Lot::new(
+                UID,
                 String::from("Taxable"),
                 String::from(""),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -270,6 +288,7 @@ mod tests {
                 actual: 6
             }),
             Lot::new(
+                UID,
                 String::from("Taxable"),
                 String::from("VOODOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),

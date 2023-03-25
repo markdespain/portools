@@ -4,10 +4,12 @@ mod util;
 use crate::portfolio::{Currency, Lot};
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, Result};
 use chrono::naive::NaiveDate;
+use uuid::Uuid;
 
 #[get("/lot")]
 async fn get_lot() -> Result<impl Responder> {
     let lot = Lot::new(
+        Uuid::new_v4(),
         String::from("Joint Taxable"),
         String::from("VOO"),
         NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
