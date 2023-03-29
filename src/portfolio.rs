@@ -3,7 +3,7 @@ use chrono::naive::NaiveDate;
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Currency {
     // the amount of the currency in its minor units (e.g. cents for "USD")
     amount: u64,
@@ -28,7 +28,7 @@ impl Currency {
 }
 
 // a Lot an amount of securities purchased as a particular time
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Lot {
     // ID of the owner of this lot
     owner: Uuid,
