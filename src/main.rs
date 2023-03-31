@@ -1,21 +1,21 @@
 mod portfolio;
 mod util;
+mod actix_util;
 
 use crate::portfolio::{Currency, Lot};
-use actix_multipart::{Field, Multipart};
+use actix_multipart::Multipart;
 use actix_web::{
+    App,
     get,
-    http::header::CONTENT_LENGTH,
-    post,
-    web::{Data, Json},
-    App, HttpRequest, HttpResponse, HttpServer, Responder, Result,
+    HttpRequest,
+    HttpResponse, HttpServer, post, Responder, web::{Data, Json},
 };
 use chrono::naive::NaiveDate;
-use futures_util::TryStreamExt as _;
 use std::io;
 use std::sync::Mutex;
 use uuid::Uuid;
-use ContentLengthHeaderError::MalformedContentLengthHeader;
+use actix_util::ContentLengthHeaderError;
+use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
 
 const MAX_FILE_SIZE: usize = 10_000;
 
@@ -27,7 +27,7 @@ async fn get_lots(data: Data<AppState>) -> impl Responder {
 
 #[post("/lots")]
 async fn post_lots(mut payload: Multipart, req: HttpRequest) -> impl Responder {
-    let content_length = get_content_length_header(&req);
+    let content_length = actix_util::get_content_length_header(&req);
     if content_length.is_err() {
         return match content_length.unwrap_err() {
             MalformedContentLengthHeader(message) => {
@@ -41,7 +41,7 @@ async fn post_lots(mut payload: Multipart, req: HttpRequest) -> impl Responder {
     if content_length > MAX_FILE_SIZE {
         return HttpResponse::PayloadTooLarge();
     }
-    let csv = multipart_to_vec(&mut payload, content_length).await;
+    let csv = actix_util::multipart_to_vec(&mut payload, content_length).await;
     if csv.is_err() {
         println!("upload error: {:?}", csv.unwrap_err());
         return HttpResponse::BadRequest();
@@ -56,59 +56,6 @@ async fn post_lots(mut payload: Multipart, req: HttpRequest) -> impl Responder {
             HttpResponse::BadRequest()
         }
     }
-}
-
-fn get_content_length_header(req: &HttpRequest) -> Result<usize, ContentLengthHeaderError> {
-    let header_value = req
-        .headers()
-        .get(CONTENT_LENGTH)
-        .ok_or(ContentLengthHeaderError::NoContentLengthHeader)?;
-    let header_str = header_value.to_str().map_err(|e| {
-        MalformedContentLengthHeader(format!("failed to convert content-length to a str: {e}"))
-    })?;
-    let content_length = header_str.parse().map_err(|e| {
-        MalformedContentLengthHeader(format!("failed to parse content-length to to a u8: {e}"))
-    })?;
-    if content_length > 0 {
-        Ok(content_length)
-    } else {
-        Err(MalformedContentLengthHeader(format!(
-            "content-length was not positive: {content_length}"
-        )))
-    }
-}
-
-#[derive(Debug)]
-enum ContentLengthHeaderError {
-    NoContentLengthHeader,
-    MalformedContentLengthHeader(String),
-}
-
-#[derive(Debug)]
-enum UploadError {
-    NoFile,
-    MaxSizeExceeded,
-}
-
-async fn multipart_to_vec(
-    payload: &mut Multipart,
-    max_num_bytes: usize,
-) -> Result<Vec<u8>, UploadError> {
-    if let Ok(Some(mut field)) = payload.try_next().await {
-        return field_to_vec(&mut field, max_num_bytes).await;
-    }
-    Err(UploadError::NoFile)
-}
-
-async fn field_to_vec(field: &mut Field, max_num_bytes: usize) -> Result<Vec<u8>, UploadError> {
-    let mut csv_bytes: Vec<u8> = Vec::new();
-    while let Ok(Some(chunk)) = field.try_next().await {
-        if csv_bytes.len() + max_num_bytes > max_num_bytes {
-            return Err(UploadError::MaxSizeExceeded);
-        }
-        csv_bytes.append(&mut chunk.to_owned().to_vec());
-    }
-    Ok(csv_bytes)
 }
 
 #[actix_web::main]
