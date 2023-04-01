@@ -1,21 +1,20 @@
+mod actix_util;
 mod portfolio;
 mod util;
-mod actix_util;
 
 use crate::portfolio::{Currency, Lot};
 use actix_multipart::Multipart;
+use actix_util::ContentLengthHeaderError;
+use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
 use actix_web::{
-    App,
-    get,
-    HttpRequest,
-    HttpResponse, HttpServer, post, Responder, web::{Data, Json},
+    get, post,
+    web::{Data, Json},
+    App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use chrono::naive::NaiveDate;
 use std::io;
 use std::sync::Mutex;
 use uuid::Uuid;
-use actix_util::ContentLengthHeaderError;
-use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
 
 const MAX_FILE_SIZE: usize = 10_000;
 
@@ -26,7 +25,7 @@ async fn get_lots(data: Data<AppState>) -> impl Responder {
 }
 
 #[post("/lots")]
-async fn post_lots(mut payload: Multipart, req: HttpRequest) -> impl Responder {
+async fn post_lots_multipart(mut payload: Multipart, req: HttpRequest) -> impl Responder {
     let content_length = actix_util::get_content_length_header(&req);
     if content_length.is_err() {
         return match content_length.unwrap_err() {
@@ -41,7 +40,7 @@ async fn post_lots(mut payload: Multipart, req: HttpRequest) -> impl Responder {
     if content_length > MAX_FILE_SIZE {
         return HttpResponse::PayloadTooLarge();
     }
-    let csv = actix_util::multipart_to_vec(&mut payload, content_length).await;
+    let csv = actix_util::multipart_to_vec(&mut payload, content_length, content_length).await;
     if csv.is_err() {
         println!("upload error: {:?}", csv.unwrap_err());
         return HttpResponse::BadRequest();
@@ -78,7 +77,7 @@ async fn main() -> io::Result<()> {
         App::new()
             .app_data(app_state.clone())
             .service(get_lots)
-            .service(post_lots)
+            .service(post_lots_multipart)
     })
     .bind(("127.0.0.1", 8080))?
     .run()

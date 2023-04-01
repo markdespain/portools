@@ -1,10 +1,12 @@
-use actix_web::HttpRequest;
-use actix_web::http::header::CONTENT_LENGTH;
 use actix_multipart::{Field, Multipart};
-use ContentLengthHeaderError::MalformedContentLengthHeader;
+use actix_web::http::header::CONTENT_LENGTH;
+use actix_web::HttpRequest;
 use futures_util::TryStreamExt;
+use ContentLengthHeaderError::MalformedContentLengthHeader;
 
-pub fn get_content_length_header(req: &HttpRequest) -> actix_web::Result<usize, ContentLengthHeaderError> {
+pub fn get_content_length_header(
+    req: &HttpRequest,
+) -> actix_web::Result<usize, ContentLengthHeaderError> {
     let header_value = req
         .headers()
         .get(CONTENT_LENGTH)
@@ -30,8 +32,12 @@ pub enum ContentLengthHeaderError {
     MalformedContentLengthHeader(String),
 }
 
-pub async fn field_to_vec(field: &mut Field, max_num_bytes: usize) -> actix_web::Result<Vec<u8>, UploadError> {
-    let mut csv_bytes: Vec<u8> = Vec::new();
+pub async fn field_to_vec(
+    field: &mut Field,
+    max_num_bytes: usize,
+    init_capacity_num_bytes: usize,
+) -> actix_web::Result<Vec<u8>, UploadError> {
+    let mut csv_bytes: Vec<u8> = Vec::with_capacity(init_capacity_num_bytes);
     while let Ok(Some(chunk)) = field.try_next().await {
         if csv_bytes.len() + max_num_bytes > max_num_bytes {
             return Err(UploadError::MaxSizeExceeded);
@@ -44,9 +50,10 @@ pub async fn field_to_vec(field: &mut Field, max_num_bytes: usize) -> actix_web:
 pub async fn multipart_to_vec(
     payload: &mut Multipart,
     max_num_bytes: usize,
+    init_capacity_num_bytes: usize,
 ) -> actix_web::Result<Vec<u8>, UploadError> {
     if let Ok(Some(mut field)) = payload.try_next().await {
-        return field_to_vec(&mut field, max_num_bytes).await;
+        return field_to_vec(&mut field, max_num_bytes, init_capacity_num_bytes).await;
     }
     Err(UploadError::NoFile)
 }
