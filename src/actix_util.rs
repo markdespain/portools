@@ -1,4 +1,4 @@
-use actix_multipart::{Field, Multipart};
+use actix_multipart::{Field, Multipart, MultipartError};
 use actix_web::http::header::CONTENT_LENGTH;
 use actix_web::HttpRequest;
 use futures_util::TryStreamExt;
@@ -52,14 +52,22 @@ pub async fn multipart_to_vec(
     max_num_bytes: usize,
     init_capacity_num_bytes: usize,
 ) -> actix_web::Result<Vec<u8>, UploadError> {
-    if let Ok(Some(mut field)) = payload.try_next().await {
-        return field_to_vec(&mut field, max_num_bytes, init_capacity_num_bytes).await;
+    match payload.try_next().await {
+        Ok(Some(mut field)) => {
+            field_to_vec(&mut field, max_num_bytes, init_capacity_num_bytes).await
+        },
+        Ok(None) => {
+            Err(UploadError::NoFile)
+        }
+        Err(e) => {
+            Err(UploadError::MultipartError(e))
+        }
     }
-    Err(UploadError::NoFile)
 }
 
 #[derive(Debug)]
 pub enum UploadError {
     NoFile,
     MaxSizeExceeded,
+    MultipartError(MultipartError)
 }
