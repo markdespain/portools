@@ -6,5 +6,5 @@
 ## Upload a File
 ```
 cargo run
-curl -v -X POST -F upload=@resource/hello http://localhost:8080/lots
+curl -v -X PUT --data @resource/hello http://localhost:8080/lots
 ```

@@ -1,6 +1,6 @@
-use actix_multipart::{Field, Multipart, MultipartError};
+use actix_web::error::PayloadError;
 use actix_web::http::header::CONTENT_LENGTH;
-use actix_web::HttpRequest;
+use actix_web::{web, HttpRequest};
 use futures_util::TryStreamExt;
 use ContentLengthHeaderError::MalformedContentLengthHeader;
 
@@ -32,15 +32,15 @@ pub enum ContentLengthHeaderError {
     MalformedContentLengthHeader(String),
 }
 
-pub async fn field_to_vec(
-    field: &mut Field,
+pub async fn payload_to_vec(
+    payload: &mut web::Payload,
     max_num_bytes: usize,
     init_capacity_num_bytes: usize,
 ) -> actix_web::Result<Vec<u8>, UploadError> {
     // todo: is there a better way to buffer?
     let mut csv_bytes: Vec<u8> = Vec::with_capacity(init_capacity_num_bytes);
     loop {
-        match field.try_next().await {
+        match payload.try_next().await {
             Ok(None) => {
                 break;
             }
@@ -51,30 +51,15 @@ pub async fn field_to_vec(
                 csv_bytes.append(&mut chunk.to_owned().to_vec());
             }
             Err(e) => {
-                return Err(UploadError::MultipartError(e));
+                return Err(UploadError::PayloadError(e));
             }
         }
     }
     Ok(csv_bytes)
 }
 
-pub async fn multipart_to_vec(
-    payload: &mut Multipart,
-    max_num_bytes: usize,
-    init_capacity_num_bytes: usize,
-) -> actix_web::Result<Vec<u8>, UploadError> {
-    match payload.try_next().await {
-        Ok(Some(mut field)) => {
-            field_to_vec(&mut field, max_num_bytes, init_capacity_num_bytes).await
-        }
-        Ok(None) => Err(UploadError::NoFile),
-        Err(e) => Err(UploadError::MultipartError(e)),
-    }
-}
-
 #[derive(Debug)]
 pub enum UploadError {
-    NoFile,
     MaxSizeExceeded,
-    MultipartError(MultipartError),
+    PayloadError(PayloadError),
 }

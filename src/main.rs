@@ -3,11 +3,10 @@ mod portfolio;
 mod util;
 
 use crate::portfolio::{Currency, Lot};
-use actix_multipart::Multipart;
 use actix_util::ContentLengthHeaderError;
 use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
 use actix_web::{
-    get, post,
+    get, put, web,
     web::{Data, Json},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
@@ -24,8 +23,8 @@ async fn get_lots(data: Data<AppState>) -> impl Responder {
     Json(lots)
 }
 
-#[post("/lots")]
-async fn post_lots_multipart(mut payload: Multipart, req: HttpRequest) -> impl Responder {
+#[put("/lots")]
+async fn post_lots_multipart(mut payload: web::Payload, req: HttpRequest) -> impl Responder {
     let content_length = actix_util::get_content_length_header(&req);
     if content_length.is_err() {
         return match content_length.unwrap_err() {
@@ -40,7 +39,7 @@ async fn post_lots_multipart(mut payload: Multipart, req: HttpRequest) -> impl R
     if content_length > MAX_FILE_SIZE {
         return HttpResponse::PayloadTooLarge();
     }
-    let csv = actix_util::multipart_to_vec(&mut payload, content_length, content_length).await;
+    let csv = actix_util::payload_to_vec(&mut payload, content_length, content_length).await;
     if csv.is_err() {
         println!("upload error: {:?}", csv.unwrap_err());
         return HttpResponse::BadRequest();

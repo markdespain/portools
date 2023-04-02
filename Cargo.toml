@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
-actix-multipart = "0.6.0"
 chrono = { version = "0.4.24", features = ["serde"] }
 csv = "1.2.1"
 futures-util = "0.3.27"
