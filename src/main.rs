@@ -13,7 +13,6 @@ use actix_web::{
 use chrono::naive::NaiveDate;
 use std::io;
 use std::sync::Mutex;
-use uuid::Uuid;
 
 const MAX_FILE_SIZE: usize = 10_000;
 
@@ -60,7 +59,6 @@ async fn post_lots_multipart(mut payload: web::Payload, req: HttpRequest) -> imp
 async fn main() -> io::Result<()> {
     let mut app_state = AppState::new();
     let lots = vec![Lot::new(
-        Uuid::new_v4(),
         String::from("Joint Taxable"),
         String::from("VOO"),
         NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
