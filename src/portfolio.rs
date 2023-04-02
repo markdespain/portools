@@ -86,7 +86,6 @@ impl Lot {
 mod tests {
     use crate::portfolio::{Currency, Lot, ValidationError};
     use chrono::naive::NaiveDate;
-    use uuid::{uuid, Uuid};
 
     // Currency Tests
 
