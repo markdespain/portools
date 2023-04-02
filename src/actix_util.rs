@@ -37,12 +37,23 @@ pub async fn field_to_vec(
     max_num_bytes: usize,
     init_capacity_num_bytes: usize,
 ) -> actix_web::Result<Vec<u8>, UploadError> {
+    // todo: is there a better way to buffer?
     let mut csv_bytes: Vec<u8> = Vec::with_capacity(init_capacity_num_bytes);
-    while let Ok(Some(chunk)) = field.try_next().await {
-        if csv_bytes.len() + max_num_bytes > max_num_bytes {
-            return Err(UploadError::MaxSizeExceeded);
+    loop {
+        match field.try_next().await {
+            Ok(None) => {
+                break;
+            }
+            Ok(Some(chunk)) => {
+                if csv_bytes.len() + max_num_bytes > max_num_bytes {
+                    return Err(UploadError::MaxSizeExceeded);
+                }
+                csv_bytes.append(&mut chunk.to_owned().to_vec());
+            }
+            Err(e) => {
+                return Err(UploadError::MultipartError(e));
+            }
         }
-        csv_bytes.append(&mut chunk.to_owned().to_vec());
     }
     Ok(csv_bytes)
 }
@@ -55,13 +66,9 @@ pub async fn multipart_to_vec(
     match payload.try_next().await {
         Ok(Some(mut field)) => {
             field_to_vec(&mut field, max_num_bytes, init_capacity_num_bytes).await
-        },
-        Ok(None) => {
-            Err(UploadError::NoFile)
         }
-        Err(e) => {
-            Err(UploadError::MultipartError(e))
-        }
+        Ok(None) => Err(UploadError::NoFile),
+        Err(e) => Err(UploadError::MultipartError(e)),
     }
 }
 
@@ -69,5 +76,5 @@ pub async fn multipart_to_vec(
 pub enum UploadError {
     NoFile,
     MaxSizeExceeded,
-    MultipartError(MultipartError)
+    MultipartError(MultipartError),
 }
