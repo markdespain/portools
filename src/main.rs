@@ -13,6 +13,7 @@ use actix_web::{
 use chrono::naive::NaiveDate;
 use std::io;
 use std::sync::Mutex;
+use actix_web::web::Buf;
 
 const MAX_FILE_SIZE: usize = 10_000;
 
@@ -23,7 +24,7 @@ async fn get_lots(data: Data<AppState>) -> impl Responder {
 }
 
 #[put("/lots")]
-async fn post_lots_multipart(mut payload: web::Payload, req: HttpRequest) -> impl Responder {
+async fn post_lots_multipart(csv: web::Bytes, req: HttpRequest) -> impl Responder {
     let content_length = actix_util::get_content_length_header(&req);
     if content_length.is_err() {
         return match content_length.unwrap_err() {
@@ -38,21 +39,19 @@ async fn post_lots_multipart(mut payload: web::Payload, req: HttpRequest) -> imp
     if content_length > MAX_FILE_SIZE {
         return HttpResponse::PayloadTooLarge();
     }
-    let csv = actix_util::payload_to_vec(&mut payload, content_length, content_length).await;
-    if csv.is_err() {
-        println!("upload error: {:?}", csv.unwrap_err());
-        return HttpResponse::BadRequest();
-    }
-    match String::from_utf8(csv.unwrap()) {
-        Ok(result) => {
-            println!("uploaded: {result}");
-            HttpResponse::Ok()
-        }
-        Err(e) => {
-            println!("failed to convert uploaded bytes to utf8: {e}");
-            HttpResponse::BadRequest()
+    let mut rdr = csv::Reader::from_reader(csv.reader());
+    for result in rdr.records() {
+        match result {
+            Ok(lot) =>{
+                println!("{:?}", lot);
+            },
+            Err(e) => {
+                println!("failed to convert uploaded bytes to utf8: {e}");
+                return HttpResponse::BadRequest();
+            }
         }
     }
+    HttpResponse::Ok()
 }
 
 #[actix_web::main]

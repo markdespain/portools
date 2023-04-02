@@ -1,0 +1,4 @@
+account,symbol,date_acquired,quantity,cost_per_share
+Taxable,VOO,3/27/2023,1.00,100.47
+IRA,BND,3/28/2023,2.00,200.26
+IRA,BND,3/29/2023,3.00,300.23

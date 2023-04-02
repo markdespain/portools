@@ -1,7 +1,5 @@
-use actix_web::error::PayloadError;
 use actix_web::http::header::CONTENT_LENGTH;
-use actix_web::{web, HttpRequest};
-use futures_util::TryStreamExt;
+use actix_web::HttpRequest;
 use ContentLengthHeaderError::MalformedContentLengthHeader;
 
 pub fn get_content_length_header(
@@ -30,36 +28,4 @@ pub fn get_content_length_header(
 pub enum ContentLengthHeaderError {
     NoContentLengthHeader,
     MalformedContentLengthHeader(String),
-}
-
-pub async fn payload_to_vec(
-    payload: &mut web::Payload,
-    max_num_bytes: usize,
-    init_capacity_num_bytes: usize,
-) -> actix_web::Result<Vec<u8>, UploadError> {
-    // todo: is there a better way to buffer?
-    let mut csv_bytes: Vec<u8> = Vec::with_capacity(init_capacity_num_bytes);
-    loop {
-        match payload.try_next().await {
-            Ok(None) => {
-                break;
-            }
-            Ok(Some(chunk)) => {
-                if csv_bytes.len() + max_num_bytes > max_num_bytes {
-                    return Err(UploadError::MaxSizeExceeded);
-                }
-                csv_bytes.append(&mut chunk.to_owned().to_vec());
-            }
-            Err(e) => {
-                return Err(UploadError::PayloadError(e));
-            }
-        }
-    }
-    Ok(csv_bytes)
-}
-
-#[derive(Debug)]
-pub enum UploadError {
-    MaxSizeExceeded,
-    PayloadError(PayloadError),
 }
