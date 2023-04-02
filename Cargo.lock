@@ -904,7 +904,6 @@ dependencies = [
  "chrono",
  "csv",
  "futures-util",
- "mime",
  "serde",
  "uuid",
 ]
