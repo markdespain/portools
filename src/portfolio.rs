@@ -36,7 +36,7 @@ pub struct Lot {
     symbol: String,
 
     // the date that the lot was purchased
-    date: NaiveDate,
+    date_acquired: NaiveDate,
 
     // the number of shares of the security in this lot
     quantity: u32,
@@ -75,7 +75,7 @@ impl Lot {
         Ok(Lot {
             account,
             symbol,
-            date,
+            date_acquired: date,
             quantity,
             cost_basis,
         })
@@ -87,8 +87,6 @@ mod tests {
     use crate::portfolio::{Currency, Lot, ValidationError};
     use chrono::naive::NaiveDate;
     use uuid::{uuid, Uuid};
-
-    const UID: Uuid = uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8");
 
     // Currency Tests
 
@@ -146,7 +144,7 @@ mod tests {
             Ok(Lot {
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
-                date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 quantity: 6,
                 cost_basis: Currency {
                     amount: 30064,
@@ -169,7 +167,7 @@ mod tests {
             Ok(Lot {
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
-                date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 quantity: 6,
                 cost_basis: Currency {
                     amount: 30064,
@@ -192,7 +190,7 @@ mod tests {
             Ok(Lot {
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
-                date: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+                date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 quantity: 6,
                 cost_basis: Currency {
                     amount: 30064,
