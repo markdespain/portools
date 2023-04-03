@@ -1,4 +1,4 @@
-use crate::util::{validate_and_trim, ValidationError};
+use crate::util::{trim_and_validate_len, ValidationError};
 use actix_web::web::Buf;
 use chrono::naive::NaiveDate;
 use csv::StringRecord;
@@ -21,8 +21,8 @@ impl Currency {
     const MAX_SYMBOL_LEN: usize = 5;
 
     pub fn new(amount: Decimal, symbol: String) -> Result<Currency, ValidationError> {
-        let symbol = validate_and_trim(
-            String::from("symbol"),
+        let symbol = trim_and_validate_len(
+            "symbol",
             symbol,
             Currency::MIN_SYMBOL_LEN,
             Currency::MAX_SYMBOL_LEN,
@@ -119,14 +119,14 @@ impl Lot {
         quantity: u32,
         cost_basis: Currency,
     ) -> Result<Lot, ValidationError> {
-        let account = validate_and_trim(
-            String::from("account"),
+        let account = trim_and_validate_len(
+            "account",
             account,
             Lot::MIN_ACCOUNT_LEN,
             Lot::MAX_ACCOUNT_LEN,
         )?;
-        let symbol = validate_and_trim(
-            String::from("symbol"),
+        let symbol = trim_and_validate_len(
+            "symbol",
             symbol,
             Lot::MIN_SYMBOL_LEN,
             Lot::MAX_SYMBOL_LEN,

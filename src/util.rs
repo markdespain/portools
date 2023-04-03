@@ -9,22 +9,22 @@ impl ValidationError {
     }
 }
 
-pub fn validate_and_trim(
-    name: String,
+pub fn trim_and_validate_len(
+    name: &str,
     value: String,
     min_len: usize,
     max_len: usize,
 ) -> Result<String, ValidationError> {
     let value = value.trim().to_string();
-    let len = value.len();
-    if len < min_len {
+    let actual_len = value.len();
+    if actual_len < min_len {
         return Err(ValidationError::new(format!(
-            "filed to short. field: {name}, min_len: {min_len}, acual_len: {len}"
+            "filed to short. field: {name}, min_len: {min_len}, actual_len: {actual_len}"
         )));
     }
-    if len > max_len {
+    if actual_len > max_len {
         return Err(ValidationError::new(format!(
-            "filed to long. field: {name}, max_len: {max_len}, acual_len: {len}"
+            "filed to long. field: {name}, max_len: {max_len}, actual_len: {actual_len}"
         )));
     }
     Ok(value)
