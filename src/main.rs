@@ -3,19 +3,15 @@ mod portfolio;
 mod util;
 
 use crate::portfolio::{Currency, Lot};
-use crate::util::ValidationError;
 use actix_util::ContentLengthHeaderError;
 use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
-use actix_web::web::Buf;
 use actix_web::{
     get, put, web,
     web::{Data, Json},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use chrono::naive::NaiveDate;
-use csv::StringRecord;
 use rust_decimal::Decimal;
-use std::collections::HashMap;
 use std::io;
 use std::sync::Mutex;
 
@@ -43,75 +39,16 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
     if content_length > MAX_FILE_SIZE {
         return HttpResponse::PayloadTooLarge();
     }
-    let mut rdr = csv::Reader::from_reader(csv.reader());
-    let mut field_to_index = HashMap::with_capacity(5);
-    let headers = rdr.headers();
-    if headers.is_err() {
-        return HttpResponse::BadRequest();
-    }
-    let headers = headers.unwrap();
-    for (i, header) in headers.iter().enumerate() {
-        field_to_index.insert(header.to_owned(), usize::from(i));
-    }
-    let mut lots = Vec::new();
-    for record in rdr.records() {
-        match record {
-            Ok(r) => match to_lot(&field_to_index, &r) {
-                Ok(lot) => {
-                    lots.push(lot);
-                }
-                Err(e) => {
-                    println!("failed to convert record to Lot: {:?}", e);
-                    return HttpResponse::BadRequest();
-                }
-            },
-            Err(e) => {
-                println!("failed to convert uploaded bytes to utf8: {e}");
-                return HttpResponse::BadRequest();
-            }
+    match Lot::from_csv(csv) {
+        Ok(lots) => {
+            data.set_lots(lots);
+            HttpResponse::Ok()
+        }
+        Err(e) => {
+            println!("Invalid upload: {:?}", e);
+            HttpResponse::BadRequest()
         }
     }
-    data.set_lots(lots);
-    HttpResponse::Ok()
-}
-
-fn to_lot(
-    field_to_index: &HashMap<String, usize>,
-    record: &StringRecord,
-) -> Result<Lot, RecordError> {
-    Lot::new_str(
-        get_field("account", field_to_index, record)?,
-        get_field("symbol", field_to_index, record)?,
-        get_field("date_acquired", field_to_index, record)?,
-        get_field("quantity", field_to_index, record)?,
-        get_field("cost_per_share", field_to_index, record)?,
-    )
-    .map_err(|validation_error| RecordError::Invalid {
-        error: validation_error,
-    })
-}
-
-fn get_field(
-    field: &str,
-    field_to_index: &HashMap<String, usize>,
-    record: &StringRecord,
-) -> Result<String, RecordError> {
-    let field_index = field_to_index
-        .get(&field[..])
-        .ok_or(RecordError::MissingHeader {
-            field: field.to_string(),
-        })?;
-    let field_value = record.get(*field_index).ok_or(RecordError::MissingValue {
-        field: field.to_string(),
-    })?;
-    Ok(String::from(field_value))
-}
-
-#[derive(Debug)]
-enum RecordError {
-    MissingHeader { field: String },
-    MissingValue { field: String },
-    Invalid { error: ValidationError },
 }
 
 #[actix_web::main]
