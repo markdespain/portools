@@ -1,11 +1,12 @@
 use crate::util::{validate_and_trim, ValidationError};
 use chrono::naive::NaiveDate;
+use rust_decimal::Decimal;
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Currency {
-    // the amount of the currency in its minor units (e.g. cents for "USD")
-    amount: u64,
+    // the amount of the currency
+    amount: Decimal,
 
     // the symbol for the currency (e.g. "USD")
     symbol: String,
@@ -15,7 +16,7 @@ impl Currency {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
-    pub fn new(amount: u64, symbol: String) -> Result<Currency, ValidationError> {
+    pub fn new(amount: Decimal, symbol: String) -> Result<Currency, ValidationError> {
         let symbol = validate_and_trim(
             String::from("symbol"),
             symbol,
@@ -72,6 +73,10 @@ impl Lot {
             Lot::MIN_SYMBOL_LEN,
             Lot::MAX_SYMBOL_LEN,
         )?;
+
+        // todo: validate quantity
+        // toto: let quantity be a decimal
+        // todo: validate cost_basis
         Ok(Lot {
             account,
             symbol,
@@ -86,6 +91,8 @@ impl Lot {
 mod tests {
     use crate::portfolio::{Currency, Lot, ValidationError};
     use chrono::naive::NaiveDate;
+    use rust_decimal::Decimal;
+    use std::error::Error;
 
     // Currency Tests
 
@@ -93,22 +100,22 @@ mod tests {
     fn currency_new() {
         assert_eq!(
             Ok(Currency {
-                amount: 1,
+                amount: Decimal::from(1),
                 symbol: String::from("USD")
             }),
-            Currency::new(1, String::from("USD"))
-        )
+            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from("USD"))
+        );
     }
 
     #[test]
     fn currency_new_symbol_with_whitespace() {
         assert_eq!(
             Ok(Currency {
-                amount: 1,
+                amount: Decimal::from(1),
                 symbol: String::from("USD")
             }),
-            Currency::new(1, String::from(" USD "))
-        )
+            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from(" USD "))
+        );
     }
 
     #[test]
@@ -119,7 +126,7 @@ mod tests {
                 min: 1,
                 actual: 0
             }),
-            Currency::new(1, String::from(""))
+            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from(""))
         );
     }
 
@@ -131,7 +138,10 @@ mod tests {
                 max: 5,
                 actual: 10
             }),
-            Currency::new(1, String::from("US Dollars"))
+            Currency::new(
+                Decimal::from_str_exact("1").unwrap(),
+                String::from("US Dollars")
+            )
         );
     }
 
@@ -146,7 +156,7 @@ mod tests {
                 date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 quantity: 6,
                 cost_basis: Currency {
-                    amount: 30064,
+                    amount: Decimal::from_str_exact("300.64").unwrap(),
                     symbol: String::from("USD")
                 }
             }),
@@ -155,9 +165,13 @@ mod tests {
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 
     #[test]
@@ -169,7 +183,7 @@ mod tests {
                 date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 quantity: 6,
                 cost_basis: Currency {
-                    amount: 30064,
+                    amount: Decimal::from_str_exact("300.64").unwrap(),
                     symbol: String::from("USD")
                 }
             }),
@@ -178,9 +192,13 @@ mod tests {
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 
     #[test]
@@ -192,7 +210,7 @@ mod tests {
                 date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 quantity: 6,
                 cost_basis: Currency {
-                    amount: 30064,
+                    amount: Decimal::from_str_exact("300.64").unwrap(),
                     symbol: String::from("USD")
                 }
             }),
@@ -201,9 +219,13 @@ mod tests {
                 String::from(" VOO "),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 
     #[test]
@@ -219,9 +241,13 @@ mod tests {
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 
     #[test]
@@ -238,9 +264,13 @@ mod tests {
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 
     #[test]
@@ -256,9 +286,13 @@ mod tests {
                 String::from(""),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 
     #[test]
@@ -274,8 +308,12 @@ mod tests {
                 String::from("VOODOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
                 6,
-                Currency::new(30064, String::from("USD")).unwrap()
+                Currency::new(
+                    Decimal::from_str_exact("300.64").unwrap(),
+                    String::from("USD")
+                )
+                .unwrap()
             )
-        )
+        );
     }
 }

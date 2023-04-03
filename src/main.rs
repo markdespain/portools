@@ -15,6 +15,8 @@ use actix_web::{
 use chrono::naive::NaiveDate;
 use chrono::ParseError;
 use csv::StringRecord;
+use rust_decimal::Decimal;
+use rusty_money::{iso, Money, MoneyError};
 use std::collections::HashMap;
 use std::io;
 use std::num::ParseIntError;
@@ -89,8 +91,11 @@ fn to_lot(
         .parse()
         .map_err(|error| RecordError::BadQuantity { error })?;
 
-    // todo: convert CSV value to currency
-    let currency = Currency::new(1, String::from("USD")).unwrap();
+    let currency = get_field("cost_per_share", field_to_index, record)?;
+    let currency = Money::from_str(&currency, iso::USD)
+        .map_err(|error| RecordError::CostPerShareInvalidMoney { error })?;
+    let currency = Currency::new(*currency.amount(), currency.currency().to_string())
+        .map_err(|error| RecordError::CostPerShareInvalidCurrency { error })?;
 
     Lot::new(
         get_field("account", field_to_index, record)?,
@@ -124,6 +129,8 @@ enum RecordError {
     MissingValue { field: String },
     BadDate { error: ParseError },
     BadQuantity { error: ParseIntError },
+    CostPerShareInvalidMoney { error: MoneyError },
+    CostPerShareInvalidCurrency { error: ValidationError },
     Invalid { validation_error: ValidationError },
 }
 
@@ -135,7 +142,11 @@ async fn main() -> io::Result<()> {
         String::from("VOO"),
         NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
         6,
-        Currency::new(30064, String::from("USD")).unwrap(),
+        Currency::new(
+            Decimal::from_str_exact("123.45").unwrap(),
+            String::from("USD"),
+        )
+        .unwrap(),
     )
     .unwrap()];
     app_state.set_lots(lots);
