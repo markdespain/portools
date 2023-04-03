@@ -1,6 +1,7 @@
 use crate::util::{validate_and_trim, ValidationError};
 use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
+use rusty_money::{iso, Money};
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -54,6 +55,29 @@ impl Lot {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
+    pub fn new_str(
+        account: String,
+        symbol: String,
+        date: String,
+        quantity: String,
+        cost_basis_amount: String,
+    ) -> Result<Lot, ValidationError> {
+        let date = NaiveDate::parse_from_str(&date, "%Y/%m/%d")
+            .map_err(|error| ValidationError::new(format!("invalid date: {:?}", error)))?;
+
+        let quantity = quantity
+            .parse()
+            .map_err(|error| ValidationError::new(format!("invalid quantity: {error}")))?;
+
+        // todo: support other currencies
+        let cost_basis = Money::from_str(&cost_basis_amount, iso::USD)
+            .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
+        let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().to_string())
+            .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
+
+        Lot::new(account, symbol, date, quantity, cost_basis)
+    }
+
     pub fn new(
         account: String,
         symbol: String,
@@ -89,10 +113,9 @@ impl Lot {
 
 #[cfg(test)]
 mod tests {
-    use crate::portfolio::{Currency, Lot, ValidationError};
+    use crate::portfolio::{Currency, Lot};
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
-    use std::error::Error;
 
     // Currency Tests
 
@@ -120,28 +143,18 @@ mod tests {
 
     #[test]
     fn currency_new_symbol_too_short() {
-        assert_eq!(
-            Err(ValidationError::FieldToShort {
-                field: String::from("symbol"),
-                min: 1,
-                actual: 0
-            }),
-            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from(""))
+        assert!(
+            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from("")).is_err()
         );
     }
 
     #[test]
     fn currency_new_symbol_too_long() {
-        assert_eq!(
-            Err(ValidationError::FieldToLong {
-                field: String::from("symbol"),
-                max: 5,
-                actual: 10
-            }),
+        assert!(
             Currency::new(
                 Decimal::from_str_exact("1").unwrap(),
                 String::from("US Dollars")
-            )
+            ).is_err()
         );
     }
 
@@ -230,12 +243,7 @@ mod tests {
 
     #[test]
     fn lot_new_account_too_short() {
-        assert_eq!(
-            Err(ValidationError::FieldToShort {
-                field: String::from("account"),
-                min: 1,
-                actual: 0
-            }),
+        assert!(
             Lot::new(
                 String::from(""),
                 String::from("VOO"),
@@ -246,19 +254,14 @@ mod tests {
                     String::from("USD")
                 )
                 .unwrap()
-            )
+            ).is_err()
         );
     }
 
     #[test]
     fn lot_new_account_too_long() {
         let account: String = (0..101).map(|_| "X").collect();
-        assert_eq!(
-            Err(ValidationError::FieldToLong {
-                field: String::from("account"),
-                max: 100,
-                actual: 101
-            }),
+        assert!(
             Lot::new(
                 account,
                 String::from("VOO"),
@@ -269,18 +272,13 @@ mod tests {
                     String::from("USD")
                 )
                 .unwrap()
-            )
+            ).is_err()
         );
     }
 
     #[test]
     fn lot_new_symbol_too_short() {
-        assert_eq!(
-            Err(ValidationError::FieldToShort {
-                field: String::from("symbol"),
-                min: 1,
-                actual: 0
-            }),
+        assert!(
             Lot::new(
                 String::from("Taxable"),
                 String::from(""),
@@ -291,18 +289,13 @@ mod tests {
                     String::from("USD")
                 )
                 .unwrap()
-            )
+            ).is_err()
         );
     }
 
     #[test]
     fn lot_new_symbol_too_long() {
-        assert_eq!(
-            Err(ValidationError::FieldToLong {
-                field: String::from("symbol"),
-                max: 5,
-                actual: 6
-            }),
+        assert!(
             Lot::new(
                 String::from("Taxable"),
                 String::from("VOODOO"),
@@ -311,9 +304,8 @@ mod tests {
                 Currency::new(
                     Decimal::from_str_exact("300.64").unwrap(),
                     String::from("USD")
-                )
-                .unwrap()
-            )
+                ).unwrap()
+            ).is_err()
         );
     }
 }

@@ -13,13 +13,10 @@ use actix_web::{
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use chrono::naive::NaiveDate;
-use chrono::ParseError;
 use csv::StringRecord;
 use rust_decimal::Decimal;
-use rusty_money::{iso, Money, MoneyError};
 use std::collections::HashMap;
 use std::io;
-use std::num::ParseIntError;
 use std::sync::Mutex;
 
 const MAX_FILE_SIZE: usize = 10_000;
@@ -82,29 +79,16 @@ fn to_lot(
     field_to_index: &HashMap<String, usize>,
     record: &StringRecord,
 ) -> Result<Lot, RecordError> {
-    let date = get_field("date_acquired", field_to_index, record)?;
-    let date = NaiveDate::parse_from_str(&date, "%Y/%m/%d")
-        .map_err(|error| RecordError::BadDate { error })?;
-
-    let quantity = get_field("quantity", field_to_index, record)?;
-    let quantity = quantity
-        .parse()
-        .map_err(|error| RecordError::BadQuantity { error })?;
-
-    let currency = get_field("cost_per_share", field_to_index, record)?;
-    let currency = Money::from_str(&currency, iso::USD)
-        .map_err(|error| RecordError::CostPerShareInvalidMoney { error })?;
-    let currency = Currency::new(*currency.amount(), currency.currency().to_string())
-        .map_err(|error| RecordError::CostPerShareInvalidCurrency { error })?;
-
-    Lot::new(
+    Lot::new_str(
         get_field("account", field_to_index, record)?,
         get_field("symbol", field_to_index, record)?,
-        date,
-        quantity,
-        currency,
+        get_field("date_acquired", field_to_index, record)?,
+        get_field("quantity", field_to_index, record)?,
+        get_field("cost_per_share", field_to_index, record)?,
     )
-    .map_err(|validation_error| RecordError::Invalid { validation_error })
+    .map_err(|validation_error| RecordError::Invalid {
+        error: validation_error,
+    })
 }
 
 fn get_field(
@@ -127,11 +111,7 @@ fn get_field(
 enum RecordError {
     MissingHeader { field: String },
     MissingValue { field: String },
-    BadDate { error: ParseError },
-    BadQuantity { error: ParseIntError },
-    CostPerShareInvalidMoney { error: MoneyError },
-    CostPerShareInvalidCurrency { error: ValidationError },
-    Invalid { validation_error: ValidationError },
+    Invalid { error: ValidationError },
 }
 
 #[actix_web::main]

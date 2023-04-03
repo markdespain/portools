@@ -1,15 +1,12 @@
 #[derive(Debug, PartialEq)]
-pub enum ValidationError {
-    FieldToShort {
-        field: String,
-        min: usize,
-        actual: usize,
-    },
-    FieldToLong {
-        field: String,
-        max: usize,
-        actual: usize,
-    },
+pub struct ValidationError {
+    message: String,
+}
+
+impl ValidationError {
+    pub fn new(message: String) -> ValidationError {
+        ValidationError { message }
+    }
 }
 
 pub fn validate_and_trim(
@@ -19,19 +16,16 @@ pub fn validate_and_trim(
     max_len: usize,
 ) -> Result<String, ValidationError> {
     let value = value.trim().to_string();
-    if value.len() < min_len {
-        return Err(ValidationError::FieldToShort {
-            field: name,
-            min: min_len,
-            actual: value.len(),
-        });
+    let len = value.len();
+    if len < min_len {
+        return Err(ValidationError::new(format!(
+            "filed to short. field: {name}, min_len: {min_len}, acual_len: {len}"
+        )));
     }
-    if value.len() > max_len {
-        return Err(ValidationError::FieldToLong {
-            field: name,
-            max: max_len,
-            actual: value.len(),
-        });
+    if len > max_len {
+        return Err(ValidationError::new(format!(
+            "filed to long. field: {name}, max_len: {max_len}, acual_len: {len}"
+        )));
     }
     Ok(value)
 }
