@@ -19,12 +19,12 @@ pub fn trim_and_validate_len(
     let actual_len = value.len();
     if actual_len < min_len {
         return Err(ValidationError::new(format!(
-            "filed to short. field: {name}, min_len: {min_len}, actual_len: {actual_len}"
+            "field to short. field: {name}, min_len: {min_len}, actual_len: {actual_len}"
         )));
     }
     if actual_len > max_len {
         return Err(ValidationError::new(format!(
-            "filed to long. field: {name}, max_len: {max_len}, actual_len: {actual_len}"
+            "field to long. field: {name}, max_len: {max_len}, actual_len: {actual_len}"
         )));
     }
     Ok(value)
