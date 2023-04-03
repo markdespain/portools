@@ -40,8 +40,9 @@ pub struct Lot {
     // the date that the lot was purchased
     date_acquired: NaiveDate,
 
-    // the number of shares of the security in this lot
-    quantity: u32,
+    // the number of shares of the security in this lot.
+    // Decimal is used in order to support fractional shares
+    quantity: Decimal,
 
     // the per-share cost purchase price of this lot
     // TOOD: add validation
@@ -82,7 +83,7 @@ impl Lot {
         account: String,
         symbol: String,
         date: NaiveDate,
-        quantity: u32,
+        quantity: Decimal,
         cost_basis: Currency,
     ) -> Result<Lot, ValidationError> {
         let account = trim_and_validate_len(
@@ -95,7 +96,6 @@ impl Lot {
             trim_and_validate_len("symbol", symbol, Lot::MIN_SYMBOL_LEN, Lot::MAX_SYMBOL_LEN)?;
 
         // todo: validate quantity
-        // toto: let quantity be a decimal
         // todo: validate cost_basis
         Ok(Lot {
             account,
@@ -122,7 +122,7 @@ mod tests {
                 amount: Decimal::from(1),
                 symbol: String::from("USD")
             }),
-            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from("USD"))
+            Currency::new(Decimal::from(1), String::from("USD"))
         );
     }
 
@@ -133,19 +133,19 @@ mod tests {
                 amount: Decimal::from(1),
                 symbol: String::from("USD")
             }),
-            Currency::new(Decimal::from_str_exact("1").unwrap(), String::from(" USD "))
+            Currency::new(Decimal::from(1), String::from(" USD "))
         );
     }
 
     #[test]
     fn currency_new_symbol_too_short() {
-        assert!(Currency::new(Decimal::from_str_exact("1").unwrap(), String::from("")).is_err());
+        assert!(Currency::new(Decimal::from(1), String::from("")).is_err());
     }
 
     #[test]
     fn currency_new_symbol_too_long() {
         assert!(Currency::new(
-            Decimal::from_str_exact("1").unwrap(),
+            Decimal::from(1),
             String::from("US Dollars")
         )
         .is_err());
@@ -160,9 +160,9 @@ mod tests {
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
                 date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                quantity: 6,
+                quantity: Decimal::from(6),
                 cost_basis: Currency {
-                    amount: Decimal::from_str_exact("300.64").unwrap(),
+                    amount: "300.64".parse().unwrap(),
                     symbol: String::from("USD")
                 }
             }),
@@ -170,9 +170,9 @@ mod tests {
                 String::from("Taxable"),
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                6,
+                Decimal::from(6),
                 Currency::new(
-                    Decimal::from_str_exact("300.64").unwrap(),
+                    "300.64".parse().unwrap(),
                     String::from("USD")
                 )
                 .unwrap()
@@ -187,9 +187,9 @@ mod tests {
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
                 date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                quantity: 6,
+                quantity: Decimal::from(6),
                 cost_basis: Currency {
-                    amount: Decimal::from_str_exact("300.64").unwrap(),
+                    amount: "300.64".parse().unwrap(),
                     symbol: String::from("USD")
                 }
             }),
@@ -197,9 +197,9 @@ mod tests {
                 String::from(" Taxable "),
                 String::from("VOO"),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                6,
+                Decimal::from(6),
                 Currency::new(
-                    Decimal::from_str_exact("300.64").unwrap(),
+                    "300.64".parse().unwrap(),
                     String::from("USD")
                 )
                 .unwrap()
@@ -214,9 +214,9 @@ mod tests {
                 account: String::from("Taxable"),
                 symbol: String::from("VOO"),
                 date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                quantity: 6,
+                quantity: Decimal::from(6),
                 cost_basis: Currency {
-                    amount: Decimal::from_str_exact("300.64").unwrap(),
+                    amount: "300.64".parse().unwrap(),
                     symbol: String::from("USD")
                 }
             }),
@@ -224,9 +224,9 @@ mod tests {
                 String::from("Taxable"),
                 String::from(" VOO "),
                 NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                6,
+                Decimal::from(6),
                 Currency::new(
-                    Decimal::from_str_exact("300.64").unwrap(),
+                    "300.64".parse().unwrap(),
                     String::from("USD")
                 )
                 .unwrap()
@@ -240,9 +240,9 @@ mod tests {
             String::from(""),
             String::from("VOO"),
             NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            6,
+            Decimal::from(6),
             Currency::new(
-                Decimal::from_str_exact("300.64").unwrap(),
+                "300.64".parse().unwrap(),
                 String::from("USD")
             )
             .unwrap()
@@ -257,9 +257,9 @@ mod tests {
             account,
             String::from("VOO"),
             NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            6,
+            Decimal::from(6),
             Currency::new(
-                Decimal::from_str_exact("300.64").unwrap(),
+                "300.64".parse().unwrap(),
                 String::from("USD")
             )
             .unwrap()
@@ -273,9 +273,9 @@ mod tests {
             String::from("Taxable"),
             String::from(""),
             NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            6,
+            Decimal::from(6),
             Currency::new(
-                Decimal::from_str_exact("300.64").unwrap(),
+                "300.64".parse().unwrap(),
                 String::from("USD")
             )
             .unwrap()
@@ -289,9 +289,9 @@ mod tests {
             String::from("Taxable"),
             String::from("VOODOO"),
             NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            6,
+            Decimal::from(6),
             Currency::new(
-                Decimal::from_str_exact("300.64").unwrap(),
+                "300.64".parse().unwrap(),
                 String::from("USD")
             )
             .unwrap()

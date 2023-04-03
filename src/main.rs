@@ -60,7 +60,7 @@ async fn main() -> io::Result<()> {
         String::from("Joint Taxable"),
         String::from("VOO"),
         NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-        6,
+        Decimal::from(6),
         Currency::new(
             Decimal::from_str_exact("123.45").unwrap(),
             String::from("USD"),
