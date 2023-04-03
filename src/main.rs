@@ -58,16 +58,14 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
     let mut lots = Vec::new();
     for record in rdr.records() {
         match record {
-            Ok(r) => {
-                match to_lot(&field_to_index, &r) {
-                    Ok(lot) => {
-                        lots.push(lot);
-                    }
-                    Err(e) => {
-                        println!("failed to convert record to Lot: {:?}", e);
-                    }
+            Ok(r) => match to_lot(&field_to_index, &r) {
+                Ok(lot) => {
+                    lots.push(lot);
                 }
-            }
+                Err(e) => {
+                    println!("failed to convert record to Lot: {:?}", e);
+                }
+            },
             Err(e) => {
                 println!("failed to convert uploaded bytes to utf8: {e}");
                 return HttpResponse::BadRequest();
@@ -83,17 +81,13 @@ fn to_lot(
     record: &StringRecord,
 ) -> Result<Lot, RecordError> {
     let date = get_field("date_acquired", field_to_index, record)?;
-    let date =
-        NaiveDate::parse_from_str(&date, "%Y/%m/%d").map_err(|error| RecordError::BadDate {
-            field: String::from("date_acquired"),
-            error,
-        })?;
+    let date = NaiveDate::parse_from_str(&date, "%Y/%m/%d")
+        .map_err(|error| RecordError::BadDate { error })?;
 
     let quantity = get_field("quantity", field_to_index, record)?;
-    let quantity = quantity.parse().map_err(|error| RecordError::BadQuantity {
-        field: String::from("quantity"),
-        error,
-    })?;
+    let quantity = quantity
+        .parse()
+        .map_err(|error| RecordError::BadQuantity { error })?;
 
     // todo: convert CSV value to currency
     let currency = Currency::new(1, String::from("USD")).unwrap();
@@ -128,8 +122,8 @@ fn get_field(
 enum RecordError {
     MissingHeader { field: String },
     MissingValue { field: String },
-    BadDate { field: String, error: ParseError },
-    BadQuantity { field: String, error: ParseIntError },
+    BadDate { error: ParseError },
+    BadQuantity { error: ParseIntError },
     Invalid { validation_error: ValidationError },
 }
 
