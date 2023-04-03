@@ -47,7 +47,6 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
         return HttpResponse::PayloadTooLarge();
     }
     let mut rdr = csv::Reader::from_reader(csv.reader());
-
     let mut field_to_index = HashMap::with_capacity(5);
     let headers = rdr.headers();
     if headers.is_err() {
@@ -66,6 +65,7 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
                 }
                 Err(e) => {
                     println!("failed to convert record to Lot: {:?}", e);
+                    return HttpResponse::BadRequest();
                 }
             },
             Err(e) => {
