@@ -1,11 +1,8 @@
 use crate::util::{trim_and_validate_len, ValidationError};
-use actix_web::web::Buf;
 use chrono::naive::NaiveDate;
-use csv::StringRecord;
 use rust_decimal::Decimal;
 use rusty_money::{iso, Money};
 use serde::Serialize;
-use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Currency {
@@ -31,7 +28,7 @@ impl Currency {
     }
 }
 
-// a Lot an amount of securities purchased as a particular time
+// a Lot is an amount of securities purchased on a particular date
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Lot {
     // name of the brokerage account within the lot is held
@@ -58,38 +55,7 @@ impl Lot {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
-    pub fn from_csv(csv: actix_web::web::Bytes) -> Result<Vec<Lot>, ValidationError> {
-        let mut rdr = csv::Reader::from_reader(csv.reader());
-        let mut field_to_index = HashMap::with_capacity(5);
-        let headers = rdr
-            .headers()
-            .map_err(|error| ValidationError::new(format!("failed get headers: {:?}", error)))?;
-        for (i, header) in headers.iter().enumerate() {
-            field_to_index.insert(header.to_owned(), i);
-        }
-        let mut lots = Vec::new();
-        for record in rdr.records() {
-            match record {
-                Ok(r) => match to_lot(&field_to_index, &r) {
-                    Ok(lot) => {
-                        lots.push(lot);
-                    }
-                    Err(e) => {
-                        println!("failed to convert record to Lot: {:?}", e);
-                        return Err(e);
-                    }
-                },
-                Err(e) => {
-                    return Err(ValidationError::new(format!(
-                        "failed to convert uploaded bytes to utf8: {e}"
-                    )));
-                }
-            }
-        }
-        Ok(lots)
-    }
-
-    pub fn new_str(
+    pub fn from_str(
         account: String,
         symbol: String,
         date: String,
@@ -125,12 +91,8 @@ impl Lot {
             Lot::MIN_ACCOUNT_LEN,
             Lot::MAX_ACCOUNT_LEN,
         )?;
-        let symbol = trim_and_validate_len(
-            "symbol",
-            symbol,
-            Lot::MIN_SYMBOL_LEN,
-            Lot::MAX_SYMBOL_LEN,
-        )?;
+        let symbol =
+            trim_and_validate_len("symbol", symbol, Lot::MIN_SYMBOL_LEN, Lot::MAX_SYMBOL_LEN)?;
 
         // todo: validate quantity
         // toto: let quantity be a decimal
@@ -143,33 +105,6 @@ impl Lot {
             cost_basis,
         })
     }
-}
-
-fn to_lot(
-    field_to_index: &HashMap<String, usize>,
-    record: &StringRecord,
-) -> Result<Lot, ValidationError> {
-    Lot::new_str(
-        get_field("account", field_to_index, record)?,
-        get_field("symbol", field_to_index, record)?,
-        get_field("date_acquired", field_to_index, record)?,
-        get_field("quantity", field_to_index, record)?,
-        get_field("cost_per_share", field_to_index, record)?,
-    )
-}
-
-fn get_field(
-    field: &str,
-    field_to_index: &HashMap<String, usize>,
-    record: &StringRecord,
-) -> Result<String, ValidationError> {
-    let field_index = field_to_index
-        .get(field)
-        .ok_or(ValidationError::new(format!("missing header: {:?}", field)))?;
-    let field_value = record
-        .get(*field_index)
-        .ok_or(ValidationError::new(format!("missing value: {:?}", field)))?;
-    Ok(String::from(field_value))
 }
 
 #[cfg(test)]

@@ -1,7 +1,9 @@
 mod actix_util;
+mod csv_digester;
 mod portfolio;
 mod util;
 
+use crate::csv_digester::csv_to_lot;
 use crate::portfolio::{Currency, Lot};
 use actix_util::ContentLengthHeaderError;
 use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
@@ -39,7 +41,7 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
     if content_length > MAX_FILE_SIZE {
         return HttpResponse::PayloadTooLarge();
     }
-    match Lot::from_csv(csv) {
+    match csv_to_lot(csv) {
         Ok(lots) => {
             data.set_lots(lots);
             HttpResponse::Ok()
