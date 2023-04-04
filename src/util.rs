@@ -22,11 +22,11 @@ pub fn validate_positive(name: &str, value: &Decimal) -> Result<(), ValidationEr
 
 pub fn trim_and_validate_len(
     name: &str,
-    value: String,
+    value: &str,
     min_len: usize,
     max_len: usize,
 ) -> Result<String, ValidationError> {
-    let value = value.trim().to_string();
+    let value = value.trim();
     let len = value.len();
     if len < min_len {
         return Err(ValidationError::new(format!(
@@ -38,5 +38,5 @@ pub fn trim_and_validate_len(
             "field to long. field: {name}, max_len: {max_len}, len: {len}"
         )));
     }
-    Ok(value)
+    Ok(value.to_string())
 }

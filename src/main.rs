@@ -16,14 +16,14 @@ use std::io;
 use std::sync::Mutex;
 
 struct AppLimits {
-    max_file_size : usize,
-    max_num_lots : usize,
+    max_file_size: usize,
+    max_num_lots: usize,
 }
 
 // TODO: allow limits to be configurable
 const APP_LIMITS: AppLimits = AppLimits {
-    max_file_size : 10_000,
-    max_num_lots : 10_000,
+    max_file_size: 10_000,
+    max_num_lots: 10_000,
 };
 
 #[get("/lots")]

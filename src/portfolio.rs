@@ -1,7 +1,7 @@
 use crate::util::{trim_and_validate_len, validate_positive, ValidationError};
 use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
-use rusty_money::{iso, Money};
+use rusty_money::{iso, FormattableCurrency, Money};
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -17,7 +17,7 @@ impl Currency {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
-    pub fn new(amount: Decimal, symbol: String) -> Result<Currency, ValidationError> {
+    pub fn new(amount: Decimal, symbol: &str) -> Result<Currency, ValidationError> {
         let symbol = trim_and_validate_len(
             "symbol",
             symbol,
@@ -56,13 +56,13 @@ impl Lot {
     const MAX_SYMBOL_LEN: usize = 5;
 
     pub fn from_str(
-        account: String,
-        symbol: String,
-        date: String,
-        quantity: String,
-        cost_basis_amount: String,
+        account: &str,
+        symbol: &str,
+        date: &str,
+        quantity: &str,
+        cost_basis_amount: &str,
     ) -> Result<Lot, ValidationError> {
-        let date = NaiveDate::parse_from_str(&date, "%Y/%m/%d")
+        let date = NaiveDate::parse_from_str(date, "%Y/%m/%d")
             .map_err(|error| ValidationError::new(format!("invalid date: {:?}", error)))?;
 
         let quantity = quantity
@@ -72,15 +72,15 @@ impl Lot {
         // todo: support other currencies
         let cost_basis = Money::from_str(&cost_basis_amount, iso::USD)
             .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
-        let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().to_string())
+        let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())
             .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
 
         Lot::new(account, symbol, date, quantity, cost_basis)
     }
 
     pub fn new(
-        account: String,
-        symbol: String,
+        account: &str,
+        symbol: &str,
         date_acquired: NaiveDate,
         quantity: Decimal,
         cost_basis: Currency,
@@ -137,8 +137,8 @@ mod tests {
     // for testing purposes
     fn new_lot_from_struct(lot: Lot) -> Result<Lot, ValidationError> {
         Lot::new(
-            lot.account,
-            lot.symbol,
+            &lot.account,
+            &lot.symbol,
             lot.date_acquired,
             lot.quantity,
             lot.cost_basis,
@@ -149,7 +149,7 @@ mod tests {
     fn currency_new() {
         assert_eq!(
             Ok(currency_fixture()),
-            Currency::new(Decimal::from(1), String::from("USD"))
+            Currency::new(Decimal::from(1), "USD")
         );
     }
 
@@ -157,18 +157,18 @@ mod tests {
     fn currency_new_symbol_with_whitespace() {
         assert_eq!(
             Ok(currency_fixture()),
-            Currency::new(Decimal::from(1), String::from(" USD "))
+            Currency::new(Decimal::from(1), " USD ")
         );
     }
 
     #[test]
     fn currency_new_symbol_too_short() {
-        assert!(Currency::new(Decimal::from(1), String::from("")).is_err());
+        assert!(Currency::new(Decimal::from(1), "").is_err());
     }
 
     #[test]
     fn currency_new_symbol_too_long() {
-        assert!(Currency::new(Decimal::from(1), String::from("US Dollars")).is_err());
+        assert!(Currency::new(Decimal::from(1), "US Dollars").is_err());
     }
 
     // Lot tests
@@ -190,7 +190,7 @@ mod tests {
     #[test]
     fn lot_new_with_zero_cost_basis() {
         assert!(new_lot_from_struct(Lot {
-            cost_basis: Currency::new(Decimal::from(0), String::from("USD")).unwrap(),
+            cost_basis: Currency::new(Decimal::from(0), "USD").unwrap(),
             ..lot_fixture()
         })
         .is_err());
@@ -199,7 +199,7 @@ mod tests {
     #[test]
     fn lot_new_with_negative_cost_basis() {
         assert!(new_lot_from_struct(Lot {
-            cost_basis: Currency::new(Decimal::from(-1), String::from("USD")).unwrap(),
+            cost_basis: Currency::new(Decimal::from(-1), "USD").unwrap(),
             ..lot_fixture()
         })
         .is_err());
