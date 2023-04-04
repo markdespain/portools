@@ -1,4 +1,4 @@
-use crate::util::{trim_and_validate_len, ValidationError};
+use crate::util::{trim_and_validate_len, validate_positive, ValidationError};
 use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
 use rusty_money::{iso, Money};
@@ -81,7 +81,7 @@ impl Lot {
     pub fn new(
         account: String,
         symbol: String,
-        date: NaiveDate,
+        date_acquired: NaiveDate,
         quantity: Decimal,
         cost_basis: Currency,
     ) -> Result<Lot, ValidationError> {
@@ -93,13 +93,12 @@ impl Lot {
         )?;
         let symbol =
             trim_and_validate_len("symbol", symbol, Lot::MIN_SYMBOL_LEN, Lot::MAX_SYMBOL_LEN)?;
-
-        // todo: validate quantity
+        validate_positive("quantity", &quantity)?;
         // todo: validate cost_basis
         Ok(Lot {
             account,
             symbol,
-            date_acquired: date,
+            date_acquired,
             quantity,
             cost_basis,
         })
@@ -109,6 +108,7 @@ impl Lot {
 #[cfg(test)]
 mod tests {
     use crate::portfolio::{Currency, Lot};
+    use crate::util::ValidationError;
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
 
@@ -117,7 +117,7 @@ mod tests {
     fn currency_fixture() -> Currency {
         Currency {
             amount: Decimal::from(1),
-            symbol: String::from("USD")
+            symbol: String::from("USD"),
         }
     }
 
@@ -129,9 +129,20 @@ mod tests {
             quantity: Decimal::from(6),
             cost_basis: Currency {
                 amount: "300.64".parse().unwrap(),
-                symbol: String::from("USD")
-            }
+                symbol: String::from("USD"),
+            },
         }
+    }
+
+    // for testing purposes
+    fn new_lot_from_struct(lot: Lot) -> Result<Lot, ValidationError> {
+        Lot::new(
+            lot.account,
+            lot.symbol,
+            lot.date_acquired,
+            lot.quantity,
+            lot.cost_basis,
+        )
     }
 
     #[test]
@@ -157,30 +168,33 @@ mod tests {
 
     #[test]
     fn currency_new_symbol_too_long() {
-        assert!(Currency::new(
-            Decimal::from(1),
-            String::from("US Dollars")
-        )
-        .is_err());
+        assert!(Currency::new(Decimal::from(1), String::from("US Dollars")).is_err());
     }
 
     // Lot tests
 
     #[test]
     fn lot_new_valid() {
-        assert_eq!(
-            Ok(lot_fixture()),
-            Lot::new(
-                String::from("Taxable"),
-                String::from("VOO"),
-                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                Decimal::from(6),
-                Currency::new(
-                    "300.64".parse().unwrap(),
-                    String::from("USD")
-                )
-                .unwrap()
-            )
+        assert_eq!(Ok(lot_fixture()), new_lot_from_struct(lot_fixture()));
+    }
+
+    #[test]
+    fn lot_new_with_negative_quantity() {
+        assert!(
+            new_lot_from_struct(Lot {
+                quantity: Decimal::from(-1),
+                ..lot_fixture()
+            }).is_err()
+        );
+    }
+
+    #[test]
+    fn lot_new_with_zero_quantity() {
+        assert!(
+            new_lot_from_struct(Lot {
+                quantity: Decimal::ZERO,
+                ..lot_fixture()
+            }).is_err()
         );
     }
 
@@ -188,17 +202,10 @@ mod tests {
     fn lot_new_account_with_whitespace() {
         assert_eq!(
             Ok(lot_fixture()),
-            Lot::new(
-                String::from(" Taxable "),
-                String::from("VOO"),
-                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                Decimal::from(6),
-                Currency::new(
-                    "300.64".parse().unwrap(),
-                    String::from("USD")
-                )
-                .unwrap()
-            )
+            new_lot_from_struct(Lot {
+                account: String::from(" Taxable "),
+                ..lot_fixture()
+            })
         );
     }
 
@@ -206,82 +213,46 @@ mod tests {
     fn lot_new_symbol_with_whitespace() {
         assert_eq!(
             Ok(lot_fixture()),
-            Lot::new(
-                String::from("Taxable"),
-                String::from(" VOO "),
-                NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                Decimal::from(6),
-                Currency::new(
-                    "300.64".parse().unwrap(),
-                    String::from("USD")
-                )
-                .unwrap()
-            )
+            new_lot_from_struct(Lot {
+                symbol: String::from(" VOO "),
+                ..lot_fixture()
+            })
         );
     }
 
     #[test]
     fn lot_new_account_too_short() {
-        assert!(Lot::new(
-            String::from(""),
-            String::from("VOO"),
-            NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            Decimal::from(6),
-            Currency::new(
-                "300.64".parse().unwrap(),
-                String::from("USD")
-            )
-            .unwrap()
-        )
+        assert!(new_lot_from_struct(Lot {
+            account: String::from(""),
+            ..lot_fixture()
+        })
         .is_err());
     }
 
     #[test]
     fn lot_new_account_too_long() {
-        let account: String = (0..101).map(|_| "X").collect();
-        assert!(Lot::new(
-            account,
-            String::from("VOO"),
-            NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            Decimal::from(6),
-            Currency::new(
-                "300.64".parse().unwrap(),
-                String::from("USD")
-            )
-            .unwrap()
-        )
+        assert!(new_lot_from_struct(Lot {
+            account: (0..101).map(|_| "X").collect(),
+            ..lot_fixture()
+        })
         .is_err());
     }
 
     #[test]
     fn lot_new_symbol_too_short() {
-        assert!(Lot::new(
-            String::from("Taxable"),
-            String::from(""),
-            NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            Decimal::from(6),
-            Currency::new(
-                "300.64".parse().unwrap(),
-                String::from("USD")
-            )
-            .unwrap()
-        )
+        assert!(new_lot_from_struct(Lot {
+            symbol: String::from(""),
+            ..lot_fixture()
+        })
         .is_err());
     }
 
     #[test]
     fn lot_new_symbol_too_long() {
-        assert!(Lot::new(
-            String::from("Taxable"),
-            String::from("VOODOO"),
-            NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            Decimal::from(6),
-            Currency::new(
-                "300.64".parse().unwrap(),
-                String::from("USD")
-            )
-            .unwrap()
-        )
+        assert!(new_lot_from_struct(Lot {
+            symbol: String::from("VOODOO"),
+            ..lot_fixture()
+        })
         .is_err());
     }
 }
