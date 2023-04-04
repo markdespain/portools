@@ -94,7 +94,7 @@ impl Lot {
         let symbol =
             trim_and_validate_len("symbol", symbol, Lot::MIN_SYMBOL_LEN, Lot::MAX_SYMBOL_LEN)?;
         validate_positive("quantity", &quantity)?;
-        // todo: validate cost_basis
+        validate_positive("cost_basis", &cost_basis.amount)?;
         Ok(Lot {
             account,
             symbol,
@@ -180,22 +180,38 @@ mod tests {
 
     #[test]
     fn lot_new_with_negative_quantity() {
-        assert!(
-            new_lot_from_struct(Lot {
-                quantity: Decimal::from(-1),
-                ..lot_fixture()
-            }).is_err()
-        );
+        assert!(new_lot_from_struct(Lot {
+            quantity: Decimal::from(-1),
+            ..lot_fixture()
+        })
+        .is_err());
+    }
+
+    #[test]
+    fn lot_new_with_zero_cost_basis() {
+        assert!(new_lot_from_struct(Lot {
+            cost_basis: Currency::new(Decimal::from(0), String::from("USD")).unwrap(),
+            ..lot_fixture()
+        })
+        .is_err());
+    }
+
+    #[test]
+    fn lot_new_with_negative_cost_basis() {
+        assert!(new_lot_from_struct(Lot {
+            cost_basis: Currency::new(Decimal::from(-1), String::from("USD")).unwrap(),
+            ..lot_fixture()
+        })
+        .is_err());
     }
 
     #[test]
     fn lot_new_with_zero_quantity() {
-        assert!(
-            new_lot_from_struct(Lot {
-                quantity: Decimal::ZERO,
-                ..lot_fixture()
-            }).is_err()
-        );
+        assert!(new_lot_from_struct(Lot {
+            quantity: Decimal::ZERO,
+            ..lot_fixture()
+        })
+        .is_err());
     }
 
     #[test]
