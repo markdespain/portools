@@ -15,9 +15,16 @@ use actix_web::{
 use std::io;
 use std::sync::Mutex;
 
-// todo: let these be configurable
-const MAX_FILE_SIZE: usize = 10_000;
-const MAX_NUM_LOTS: usize = 10_000;
+struct AppLimits {
+    max_file_size : usize,
+    max_num_lots : usize,
+}
+
+// TODO: allow limits to be configurable
+const APP_LIMITS: AppLimits = AppLimits {
+    max_file_size : 10_000,
+    max_num_lots : 10_000,
+};
 
 #[get("/lots")]
 async fn get_lots(data: Data<AppState>) -> impl Responder {
@@ -38,12 +45,12 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
         };
     }
     let content_length = content_length.unwrap();
-    if content_length > MAX_FILE_SIZE {
+    if content_length > APP_LIMITS.max_file_size {
         return HttpResponse::PayloadTooLarge();
     }
     match csv_to_lot(csv) {
         Ok(lots) => {
-            if lots.len() > MAX_NUM_LOTS {
+            if lots.len() > APP_LIMITS.max_num_lots {
                 return HttpResponse::PayloadTooLarge();
             }
             data.set_lots(lots);
