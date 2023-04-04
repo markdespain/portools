@@ -6,7 +6,7 @@ mod util;
 use crate::csv_digester::csv_to_lot;
 use crate::portfolio::Lot;
 use actix_util::ContentLengthHeaderError;
-use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
+use actix_util::ContentLengthHeaderError::Malformed;
 use actix_web::{
     get, put, web,
     web::{Data, Json},
@@ -37,11 +37,11 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
     let content_length = actix_util::get_content_length_header(&req);
     if content_length.is_err() {
         return match content_length.unwrap_err() {
-            MalformedContentLengthHeader(message) => {
+            Malformed(message) => {
                 println!("bad request: {message}");
                 HttpResponse::BadRequest()
             }
-            ContentLengthHeaderError::NoContentLengthHeader => HttpResponse::LengthRequired(),
+            ContentLengthHeaderError::Missing => HttpResponse::LengthRequired(),
         };
     }
     let content_length = content_length.unwrap();
