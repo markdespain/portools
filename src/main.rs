@@ -4,7 +4,7 @@ mod portfolio;
 mod util;
 
 use crate::csv_digester::csv_to_lot;
-use crate::portfolio::{Currency, Lot};
+use crate::portfolio::Lot;
 use actix_util::ContentLengthHeaderError;
 use actix_util::ContentLengthHeaderError::MalformedContentLengthHeader;
 use actix_web::{
@@ -12,11 +12,10 @@ use actix_web::{
     web::{Data, Json},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-use chrono::naive::NaiveDate;
-use rust_decimal::Decimal;
 use std::io;
 use std::sync::Mutex;
 
+// todo: let this be configurable
 const MAX_FILE_SIZE: usize = 10_000;
 
 #[get("/lots")]
@@ -55,23 +54,7 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    let app_state = AppState::new();
-    let lots = vec![Lot::new(
-        String::from("Joint Taxable"),
-        String::from("VOO"),
-        NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-        Decimal::from(6),
-        Currency::new(
-            Decimal::from_str_exact("123.45").unwrap(),
-            String::from("USD"),
-        )
-        .unwrap(),
-    )
-    .unwrap()];
-    app_state.set_lots(lots);
-
-    let app_state = Data::new(app_state);
-
+    let app_state = Data::new(AppState::new());
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
