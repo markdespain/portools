@@ -45,7 +45,6 @@ pub struct Lot {
     quantity: Decimal,
 
     // the per-share cost purchase price of this lot
-    // TOOD: add validation
     cost_basis: Currency,
 }
 
@@ -115,13 +114,30 @@ mod tests {
 
     // Currency Tests
 
+    fn currency_fixture() -> Currency {
+        Currency {
+            amount: Decimal::from(1),
+            symbol: String::from("USD")
+        }
+    }
+
+    fn lot_fixture() -> Lot {
+        Lot {
+            account: String::from("Taxable"),
+            symbol: String::from("VOO"),
+            date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
+            quantity: Decimal::from(6),
+            cost_basis: Currency {
+                amount: "300.64".parse().unwrap(),
+                symbol: String::from("USD")
+            }
+        }
+    }
+
     #[test]
     fn currency_new() {
         assert_eq!(
-            Ok(Currency {
-                amount: Decimal::from(1),
-                symbol: String::from("USD")
-            }),
+            Ok(currency_fixture()),
             Currency::new(Decimal::from(1), String::from("USD"))
         );
     }
@@ -129,10 +145,7 @@ mod tests {
     #[test]
     fn currency_new_symbol_with_whitespace() {
         assert_eq!(
-            Ok(Currency {
-                amount: Decimal::from(1),
-                symbol: String::from("USD")
-            }),
+            Ok(currency_fixture()),
             Currency::new(Decimal::from(1), String::from(" USD "))
         );
     }
@@ -156,16 +169,7 @@ mod tests {
     #[test]
     fn lot_new_valid() {
         assert_eq!(
-            Ok(Lot {
-                account: String::from("Taxable"),
-                symbol: String::from("VOO"),
-                date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                quantity: Decimal::from(6),
-                cost_basis: Currency {
-                    amount: "300.64".parse().unwrap(),
-                    symbol: String::from("USD")
-                }
-            }),
+            Ok(lot_fixture()),
             Lot::new(
                 String::from("Taxable"),
                 String::from("VOO"),
@@ -183,16 +187,7 @@ mod tests {
     #[test]
     fn lot_new_account_with_whitespace() {
         assert_eq!(
-            Ok(Lot {
-                account: String::from("Taxable"),
-                symbol: String::from("VOO"),
-                date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                quantity: Decimal::from(6),
-                cost_basis: Currency {
-                    amount: "300.64".parse().unwrap(),
-                    symbol: String::from("USD")
-                }
-            }),
+            Ok(lot_fixture()),
             Lot::new(
                 String::from(" Taxable "),
                 String::from("VOO"),
@@ -210,16 +205,7 @@ mod tests {
     #[test]
     fn lot_new_symbol_with_whitespace() {
         assert_eq!(
-            Ok(Lot {
-                account: String::from("Taxable"),
-                symbol: String::from("VOO"),
-                date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-                quantity: Decimal::from(6),
-                cost_basis: Currency {
-                    amount: "300.64".parse().unwrap(),
-                    symbol: String::from("USD")
-                }
-            }),
+            Ok(lot_fixture()),
             Lot::new(
                 String::from("Taxable"),
                 String::from(" VOO "),
