@@ -3,6 +3,7 @@ use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
 use rusty_money::{iso, FormattableCurrency, Money};
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Currency {
@@ -31,6 +32,10 @@ impl Currency {
 // a Lot is an amount of securities purchased on a particular date
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Lot {
+
+    // unique id for this Lot
+    id: Uuid,
+
     // name of the brokerage account within the lot is held
     account: String,
 
@@ -70,7 +75,7 @@ impl Lot {
             .map_err(|error| ValidationError::new(format!("invalid quantity: {error}")))?;
 
         // todo: support other currencies
-        let cost_basis = Money::from_str(&cost_basis_amount, iso::USD)
+        let cost_basis = Money::from_str(cost_basis_amount, iso::USD)
             .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
         let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())
             .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
@@ -96,6 +101,7 @@ impl Lot {
         validate_positive("quantity", &quantity)?;
         validate_positive("cost_basis", &cost_basis.amount)?;
         Ok(Lot {
+            id: Uuid::new_v4(),
             account,
             symbol,
             date_acquired,
@@ -111,6 +117,7 @@ mod tests {
     use crate::util::ValidationError;
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
+    use uuid::uuid;
 
     // Currency Tests
 
@@ -123,6 +130,7 @@ mod tests {
 
     fn lot_fixture() -> Lot {
         Lot {
+            id : uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
             account: String::from("Taxable"),
             symbol: String::from("VOO"),
             date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -135,7 +143,7 @@ mod tests {
     }
 
     // for testing purposes
-    fn new_lot_from_struct(lot: Lot) -> Result<Lot, ValidationError> {
+    fn new_lot_from_spec(lot: Lot) -> Result<Lot, ValidationError> {
         Lot::new(
             &lot.account,
             &lot.symbol,
@@ -173,102 +181,111 @@ mod tests {
 
     // Lot tests
 
+    fn assert_new_from_spec(mut expected: Lot, spec:Lot) {
+        match new_lot_from_spec(spec) {
+            Err(e) => {panic!("expected Ok but got Err: {:?}", e)}
+            Ok(actual) => {
+                // since the actual Lot will have its own unique id, set the expected lot's id
+                // to the actual's so that an equality check can be easily done
+                expected.id = actual.id;
+                assert_eq!(expected, actual);
+            }
+        }
+    }
+
+    fn assert_new_from_spec_is_err(spec:Lot) {
+        match new_lot_from_spec(spec) {
+            Err(_) => {
+                // expected
+            }
+            Ok(actual) => {
+                panic!("expected Err but got Ok: {:?}", actual);
+            }
+        }
+    }
+
     #[test]
     fn lot_new_valid() {
-        assert_eq!(Ok(lot_fixture()), new_lot_from_struct(lot_fixture()));
+        assert_new_from_spec(lot_fixture(), lot_fixture());
     }
 
     #[test]
     fn lot_new_with_negative_quantity() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             quantity: Decimal::from(-1),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_with_zero_cost_basis() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             cost_basis: Currency::new(Decimal::from(0), "USD").unwrap(),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_with_negative_cost_basis() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             cost_basis: Currency::new(Decimal::from(-1), "USD").unwrap(),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_with_zero_quantity() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             quantity: Decimal::ZERO,
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_account_with_whitespace() {
-        assert_eq!(
-            Ok(lot_fixture()),
-            new_lot_from_struct(Lot {
-                account: String::from(" Taxable "),
-                ..lot_fixture()
-            })
-        );
+        assert_new_from_spec(lot_fixture(), Lot {
+            account: String::from(" Taxable "),
+            ..lot_fixture()
+        });
     }
 
     #[test]
     fn lot_new_symbol_with_whitespace() {
-        assert_eq!(
-            Ok(lot_fixture()),
-            new_lot_from_struct(Lot {
-                symbol: String::from(" VOO "),
-                ..lot_fixture()
-            })
-        );
+        assert_new_from_spec(lot_fixture(), Lot {
+            symbol: String::from(" VOO "),
+            ..lot_fixture()
+        });
     }
 
     #[test]
     fn lot_new_account_too_short() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             account: String::from(""),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_account_too_long() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             account: (0..101).map(|_| "X").collect(),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_symbol_too_short() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             symbol: String::from(""),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 
     #[test]
     fn lot_new_symbol_too_long() {
-        assert!(new_lot_from_struct(Lot {
+        assert_new_from_spec_is_err(Lot {
             symbol: String::from("VOODOO"),
             ..lot_fixture()
-        })
-        .is_err());
+        });
     }
 }

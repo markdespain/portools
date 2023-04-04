@@ -10,7 +10,7 @@ cargo run
 
 ## Get
 ```
- curl -v http://localhost:8080/lots 
+curl -v http://localhost:8080/lots 
 ```
 
 ## Upload a CSV
