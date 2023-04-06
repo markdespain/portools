@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portools-deployment
+  labels:
+    app: portools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portools
+  template:
+    metadata:
+      labels:
+        app: portools
+    spec:
+      containers:
+        - name: portools
+          image: portools
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
