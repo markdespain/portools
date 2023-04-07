@@ -1,9 +1,9 @@
-FROM rust:1.67 as builder
+FROM rust:1.68.2 as builder
 WORKDIR /usr/src/portools
 COPY . .
 RUN cargo install --path .
 
 FROM debian:bullseye-slim
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl iputils-ping && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/portools /usr/local/bin/portools
 CMD ["portools"]
