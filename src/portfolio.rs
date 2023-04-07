@@ -59,6 +59,8 @@ impl Lot {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
+    const DATE_FORMAT : &'static str = "%Y/%m/%d";
+
     pub fn from_str(
         account: &str,
         symbol: &str,
@@ -66,7 +68,7 @@ impl Lot {
         quantity: &str,
         cost_basis_amount: &str,
     ) -> Result<Lot, Invalid> {
-        let date = NaiveDate::parse_from_str(date, "%Y/%m/%d")
+        let date = NaiveDate::parse_from_str(date, Lot::DATE_FORMAT)
             .map_err(|error| Invalid::format_error("date", &error))?;
 
         let quantity = quantity
@@ -107,6 +109,10 @@ impl Lot {
             cost_basis,
         })
     }
+
+    fn date_acquired_string(&self) -> String {
+        format!("{}", self.date_acquired.format(Lot::DATE_FORMAT))
+    }
 }
 
 #[cfg(test)]
@@ -116,6 +122,7 @@ mod tests {
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
     use uuid::uuid;
+    use crate::util::Reason::FormatError;
 
     // Currency Tests
 
@@ -179,29 +186,115 @@ mod tests {
 
     // Lot tests
 
-    fn assert_new_from_spec(mut expected: Lot, spec: Lot) {
-        match new_lot_from_spec(spec) {
+    fn assert_new_from_spec(expected: Lot, spec: Lot) {
+        let actual = new_lot_from_spec(spec);
+        assert_eq_ignore_id(expected, actual);
+    }
+
+    fn assert_eq_ignore_id(mut expected: Lot, actual: Result<Lot,Invalid>) {
+        match actual {
             Err(e) => {
                 panic!("expected Ok but got Err: {:?}", e)
             }
-            Ok(actual) => {
+            Ok(actual_lot) => {
                 // since the actual Lot will have its own unique id, set the expected lot's id
                 // to the actual's so that an equality check can be easily done
-                expected.id = actual.id;
-                assert_eq!(expected, actual);
+                expected.id = actual_lot.id;
+                assert_eq!(expected, actual_lot);
             }
         }
     }
 
     fn assert_new_from_spec_is_err(spec: Lot, expected_err: Invalid) {
-        match new_lot_from_spec(spec) {
+        let actual = new_lot_from_spec(spec);
+        assert_err(expected_err, actual);
+    }
+
+    fn assert_err(expected_err: Invalid, actual: Result<Lot, Invalid>) {
+        match actual {
             Err(actual_err) => {
                 assert_eq!(expected_err, actual_err)
             }
-            Ok(actual) => {
-                panic!("expected Err but got Ok: {:?}", actual);
+            Ok(actual_lot) => {
+                panic!("expected Err but got Ok: {:?}", actual_lot);
             }
         }
+    }
+
+    fn assert_format_err(expected_field: &str, actual: Result<Lot, Invalid>) {
+        match actual {
+            Err(actual_err) => {
+                assert_eq!(expected_field, actual_err.field, "field name should match expected");
+                match actual_err.reason {
+                    FormatError{..} => {
+                        // skip assertion of error message, since it may change unexpectedly due
+                        // to being human readable and due to potentially coming from an external
+                        // library
+                    },
+                    unexpected_error => {
+                        panic!("expected reason to be Invalid::FormatError but got: {:?}", unexpected_error);
+                    }
+                }
+            }
+            Ok(actual_lot) => {
+                panic!("expected Err but got Ok: {:?}", actual_lot);
+            }
+        }
+    }
+
+    #[test]
+    fn lot_from_str_valid() {
+        let expected = lot_fixture();
+        let lot = Lot::from_str(
+            &expected.account,
+            &expected.symbol,
+            &expected.date_acquired_string(),
+            &expected.quantity.to_string(),
+            &expected.cost_basis.amount.to_string()
+        );
+        assert_eq_ignore_id(lot_fixture(), lot)
+    }
+
+    #[test]
+    fn lot_from_str_with_date_with_invalid_format() {
+        let fixture = lot_fixture();
+        let date_acquired = format!("{}", fixture.date_acquired.format("%Y-%m-%d"));
+        let lot = Lot::from_str(
+            &fixture.account,
+            &fixture.symbol,
+            &date_acquired,
+            &fixture.quantity.to_string(),
+            &fixture.cost_basis.amount.to_string()
+        );
+        assert_format_err("date", lot);
+    }
+
+    #[test]
+    fn lot_from_str_with_quantity_not_an_decimal() {
+        let fixture = lot_fixture();
+        let quantity = "not a number";
+        let lot = Lot::from_str(
+            &fixture.account,
+            &fixture.symbol,
+            &fixture.date_acquired_string(),
+            quantity,
+            &fixture.cost_basis.amount.to_string()
+        );
+        assert_format_err("quantity", lot);
+    }
+
+    #[test]
+    fn lot_from_str_with_cost_basis_not_an_number() {
+        let fixture = lot_fixture();
+        let cost_basis = "not a number";
+        let lot = Lot::from_str(
+            &fixture.account,
+            &fixture.symbol,
+            &fixture.date_acquired_string(),
+            &fixture.quantity.to_string(),
+            cost_basis
+        );
+        assert_format_err("cost_basis", lot);
     }
 
     #[test]
