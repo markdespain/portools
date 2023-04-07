@@ -1,4 +1,4 @@
-use crate::util::{trim_and_validate_len, validate_positive, ValidationError};
+use crate::util::{trim_and_validate_len, validate_positive, Invalid};
 use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
 use rusty_money::{iso, FormattableCurrency, Money};
@@ -18,7 +18,7 @@ impl Currency {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
-    pub fn new(amount: Decimal, symbol: &str) -> Result<Currency, ValidationError> {
+    pub fn new(amount: Decimal, symbol: &str) -> Result<Currency, Invalid> {
         let symbol = trim_and_validate_len(
             "symbol",
             symbol,
@@ -32,7 +32,6 @@ impl Currency {
 // a Lot is an amount of securities purchased on a particular date
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Lot {
-
     // unique id for this Lot
     id: Uuid,
 
@@ -66,19 +65,18 @@ impl Lot {
         date: &str,
         quantity: &str,
         cost_basis_amount: &str,
-    ) -> Result<Lot, ValidationError> {
+    ) -> Result<Lot, Invalid> {
         let date = NaiveDate::parse_from_str(date, "%Y/%m/%d")
-            .map_err(|error| ValidationError::new(format!("invalid date: {:?}", error)))?;
+            .map_err(|error| Invalid::format_error("date", &error))?;
 
         let quantity = quantity
             .parse()
-            .map_err(|error| ValidationError::new(format!("invalid quantity: {error}")))?;
+            .map_err(|error| Invalid::format_error("quantity", &error))?;
 
         // todo: support other currencies
         let cost_basis = Money::from_str(cost_basis_amount, iso::USD)
-            .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
-        let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())
-            .map_err(|error| ValidationError::new(format!("invalid cost_basis: {:?}", error)))?;
+            .map_err(|error| Invalid::format_error("cost_basis", &error))?;
+        let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())?;
 
         Lot::new(account, symbol, date, quantity, cost_basis)
     }
@@ -89,7 +87,7 @@ impl Lot {
         date_acquired: NaiveDate,
         quantity: Decimal,
         cost_basis: Currency,
-    ) -> Result<Lot, ValidationError> {
+    ) -> Result<Lot, Invalid> {
         let account = trim_and_validate_len(
             "account",
             account,
@@ -114,7 +112,7 @@ impl Lot {
 #[cfg(test)]
 mod tests {
     use crate::portfolio::{Currency, Lot};
-    use crate::util::ValidationError;
+    use crate::util::{Invalid, Reason};
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
     use uuid::uuid;
@@ -130,7 +128,7 @@ mod tests {
 
     fn lot_fixture() -> Lot {
         Lot {
-            id : uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
+            id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
             account: String::from("Taxable"),
             symbol: String::from("VOO"),
             date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
@@ -143,7 +141,7 @@ mod tests {
     }
 
     // for testing purposes
-    fn new_lot_from_spec(lot: Lot) -> Result<Lot, ValidationError> {
+    fn new_lot_from_spec(lot: Lot) -> Result<Lot, Invalid> {
         Lot::new(
             &lot.account,
             &lot.symbol,
@@ -181,9 +179,11 @@ mod tests {
 
     // Lot tests
 
-    fn assert_new_from_spec(mut expected: Lot, spec:Lot) {
+    fn assert_new_from_spec(mut expected: Lot, spec: Lot) {
         match new_lot_from_spec(spec) {
-            Err(e) => {panic!("expected Ok but got Err: {:?}", e)}
+            Err(e) => {
+                panic!("expected Ok but got Err: {:?}", e)
+            }
             Ok(actual) => {
                 // since the actual Lot will have its own unique id, set the expected lot's id
                 // to the actual's so that an equality check can be easily done
@@ -193,10 +193,10 @@ mod tests {
         }
     }
 
-    fn assert_new_from_spec_is_err(spec:Lot) {
+    fn assert_new_from_spec_is_err(spec: Lot, expected_err: Invalid) {
         match new_lot_from_spec(spec) {
-            Err(_) => {
-                // expected
+            Err(actual_err) => {
+                assert_eq!(expected_err, actual_err)
             }
             Ok(actual) => {
                 panic!("expected Err but got Ok: {:?}", actual);
@@ -211,81 +211,128 @@ mod tests {
 
     #[test]
     fn lot_new_with_negative_quantity() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             quantity: Decimal::from(-1),
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "quantity".to_string(),
+            reason : Reason::MustBePositive
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_with_zero_cost_basis() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             cost_basis: Currency::new(Decimal::from(0), "USD").unwrap(),
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "cost_basis".to_string(),
+            reason : Reason::MustBePositive
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_with_negative_cost_basis() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             cost_basis: Currency::new(Decimal::from(-1), "USD").unwrap(),
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "cost_basis".to_string(),
+            reason : Reason::MustBePositive
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_with_zero_quantity() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             quantity: Decimal::ZERO,
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "quantity".to_string(),
+            reason : Reason::MustBePositive
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_account_with_whitespace() {
-        assert_new_from_spec(lot_fixture(), Lot {
-            account: String::from(" Taxable "),
-            ..lot_fixture()
-        });
+        assert_new_from_spec(
+            lot_fixture(),
+            Lot {
+                account: String::from(" Taxable "),
+                ..lot_fixture()
+            },
+        );
     }
 
     #[test]
     fn lot_new_symbol_with_whitespace() {
-        assert_new_from_spec(lot_fixture(), Lot {
-            symbol: String::from(" VOO "),
-            ..lot_fixture()
-        });
+        assert_new_from_spec(
+            lot_fixture(),
+            Lot {
+                symbol: String::from(" VOO "),
+                ..lot_fixture()
+            },
+        );
     }
 
     #[test]
     fn lot_new_account_too_short() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             account: String::from(""),
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "account".to_string(),
+            reason : Reason::MustHaveLongerLen
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_account_too_long() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             account: (0..101).map(|_| "X").collect(),
             ..lot_fixture()
-        });
+        };
+
+        let expected_error = Invalid{
+            field : "account".to_string(),
+            reason : Reason::MustHaveShorterLen
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_symbol_too_short() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             symbol: String::from(""),
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "symbol".to_string(),
+            reason : Reason::MustHaveLongerLen
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 
     #[test]
     fn lot_new_symbol_too_long() {
-        assert_new_from_spec_is_err(Lot {
+        let lot_spec = Lot {
             symbol: String::from("VOODOO"),
             ..lot_fixture()
-        });
+        };
+        let expected_error = Invalid{
+            field : "symbol".to_string(),
+            reason : Reason::MustHaveShorterLen
+        };
+        assert_new_from_spec_is_err(lot_spec, expected_error);
     }
 }

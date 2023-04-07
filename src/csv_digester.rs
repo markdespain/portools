@@ -1,20 +1,20 @@
 use crate::portfolio::Lot;
-use crate::util::ValidationError;
+use crate::util::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
 use std::collections::HashMap;
 
-pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, ValidationError> {
+pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
     let mut rdr = csv::Reader::from_reader(csv.reader());
     let mut field_to_index = HashMap::with_capacity(5);
     let headers = rdr
         .headers()
-        .map_err(|error| ValidationError::new(format!("failed get headers: {:?}", error)))?;
+        .map_err(|error| Invalid::format_error("headers", &error))?;
     for (i, header) in headers.iter().enumerate() {
         field_to_index.insert(header.to_owned(), i);
     }
     let mut lots = Vec::new();
-    for record in rdr.records() {
+    for (row, record) in rdr.records().enumerate() {
         match record {
             Ok(r) => match to_lot(&field_to_index, &r) {
                 Ok(lot) => {
@@ -31,20 +31,15 @@ pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, ValidationError> {
                     return Err(e);
                 }
             },
-            Err(e) => {
-                return Err(ValidationError::new(format!(
-                    "failed to convert uploaded bytes to utf8: {e}"
-                )));
+            Err(cause) => {
+                return Err(Invalid::decoding_error(format!("row {row}"), &cause));
             }
         }
     }
     Ok(lots)
 }
 
-fn to_lot(
-    field_to_index: &HashMap<String, usize>,
-    record: &StringRecord,
-) -> Result<Lot, ValidationError> {
+fn to_lot(field_to_index: &HashMap<String, usize>, record: &StringRecord) -> Result<Lot, Invalid> {
     Lot::from_str(
         get_field("account", field_to_index, record)?,
         get_field("symbol", field_to_index, record)?,
@@ -58,12 +53,12 @@ fn get_field<'a>(
     field: &'a str,
     field_to_index: &'a HashMap<String, usize>,
     record: &'a StringRecord,
-) -> Result<&'a str, ValidationError> {
+) -> Result<&'a str, Invalid> {
     let field_index = field_to_index
         .get(field)
-        .ok_or(ValidationError::new(format!("missing header: {:?}", field)))?;
+        .ok_or(Invalid::required(format!("column: {:?}", field)))?;
     let field_value = record
         .get(*field_index)
-        .ok_or(ValidationError::new(format!("missing value: {:?}", field)))?;
+        .ok_or(Invalid::required_str(field))?;
     Ok(field_value)
 }
