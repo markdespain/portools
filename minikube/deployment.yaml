@@ -2,20 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: portools-deployment
-  labels:
-    app: portools
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: portools
+      app: portools-deployment
   template:
     metadata:
       labels:
-        app: portools
+        app: portools-deployment
     spec:
       containers:
-        - name: portools
+        - name: portools-application
           image: portools
           imagePullPolicy: Never
           ports:
