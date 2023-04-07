@@ -1,17 +1,19 @@
 mod actix_util;
 mod csv_digester;
-mod portfolio;
+mod dao;
+mod model;
 mod util;
 
 use crate::csv_digester::csv_to_lot;
-use crate::portfolio::Lot;
+use crate::model::Lot;
 use actix_util::ContentLengthHeaderError;
 use actix_util::ContentLengthHeaderError::Malformed;
 use actix_web::{
-    get, put, web,
+    error, get, put, web,
     web::{Data, Json},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
+use mongodb::Client;
 use std::io;
 use std::sync::Mutex;
 
@@ -27,9 +29,14 @@ const APP_LIMITS: AppLimits = AppLimits {
 };
 
 #[get("/lots")]
-async fn get_lots(data: Data<AppState>) -> impl Responder {
-    let lots = data.get_lots();
-    Json(lots)
+async fn get_lots(data: Data<AppState>) -> actix_web::Result<Json<Vec<Lot>>> {
+    match dao::get_lots(&data.client).await {
+        Ok(lots) => Ok(Json(lots)),
+        Err(e) => {
+            println!("get_lots error: {e}");
+            Err(error::ErrorInternalServerError(e))
+        }
+    }
 }
 
 #[put("/lots")]
@@ -49,12 +56,17 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
         return HttpResponse::PayloadTooLarge();
     }
     match csv_to_lot(csv) {
-        Ok(lots) => {
+        Ok(ref lots) => {
             if lots.len() > APP_LIMITS.max_num_lots {
                 return HttpResponse::PayloadTooLarge();
             }
-            data.set_lots(lots);
-            HttpResponse::Ok()
+            match dao::put_lots(&data.client, lots).await {
+                Ok(_) => HttpResponse::Ok(),
+                Err(e) => {
+                    println!("get_lots error: {e}");
+                    HttpResponse::InternalServerError()
+                }
+            }
         }
         Err(e) => {
             println!("Invalid upload: {:?}", e);
@@ -65,7 +77,13 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    let app_state = Data::new(AppState::new());
+    // todo: refine so that docker and non-Docker flows are seamless
+    let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
+
+    let client = Client::with_uri_str(uri).await.expect("failed to connect");
+    dao::create_lots_index(&client).await;
+
+    let app_state = Data::new(AppState::new(client));
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
@@ -78,13 +96,16 @@ async fn main() -> io::Result<()> {
 }
 
 struct AppState {
+    // todo: abstract as Dao, move Mutex and Client into respective dao implementations
     lots: Mutex<Vec<Lot>>,
+    client: Client,
 }
 
 impl AppState {
-    fn new() -> AppState {
+    fn new(client: Client) -> AppState {
         AppState {
             lots: Mutex::new(Vec::new()),
+            client,
         }
     }
 

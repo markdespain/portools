@@ -2,10 +2,10 @@ use crate::util::{trim_and_validate_len, validate_positive, Invalid};
 use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
 use rusty_money::{iso, FormattableCurrency, Money};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Currency {
     // the amount of the currency
     amount: Decimal,
@@ -30,7 +30,7 @@ impl Currency {
 }
 
 // a Lot is an amount of securities purchased on a particular date
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Lot {
     // unique id for this Lot
     id: Uuid,
@@ -59,7 +59,7 @@ impl Lot {
     const MIN_SYMBOL_LEN: usize = 1;
     const MAX_SYMBOL_LEN: usize = 5;
 
-    const DATE_FORMAT : &'static str = "%Y/%m/%d";
+    const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
     pub fn from_str(
         account: &str,
@@ -117,12 +117,12 @@ impl Lot {
 
 #[cfg(test)]
 mod tests {
-    use crate::portfolio::{Currency, Lot};
+    use crate::model::{Currency, Lot};
+    use crate::util::Reason::FormatError;
     use crate::util::{Invalid, Reason};
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
     use uuid::uuid;
-    use crate::util::Reason::FormatError;
 
     // Currency Tests
 
@@ -191,7 +191,7 @@ mod tests {
         assert_eq_ignore_id(expected, actual);
     }
 
-    fn assert_eq_ignore_id(mut expected: Lot, actual: Result<Lot,Invalid>) {
+    fn assert_eq_ignore_id(mut expected: Lot, actual: Result<Lot, Invalid>) {
         match actual {
             Err(e) => {
                 panic!("expected Ok but got Err: {:?}", e)
@@ -224,15 +224,21 @@ mod tests {
     fn assert_format_err(expected_field: &str, actual: Result<Lot, Invalid>) {
         match actual {
             Err(actual_err) => {
-                assert_eq!(expected_field, actual_err.field, "field name should match expected");
+                assert_eq!(
+                    expected_field, actual_err.field,
+                    "field name should match expected"
+                );
                 match actual_err.reason {
-                    FormatError{..} => {
+                    FormatError { .. } => {
                         // skip assertion of error message, since it may change unexpectedly due
                         // to being human readable and due to potentially coming from an external
                         // library
-                    },
+                    }
                     unexpected_error => {
-                        panic!("expected reason to be Invalid::FormatError but got: {:?}", unexpected_error);
+                        panic!(
+                            "expected reason to be Invalid::FormatError but got: {:?}",
+                            unexpected_error
+                        );
                     }
                 }
             }
@@ -250,7 +256,7 @@ mod tests {
             &expected.symbol,
             &expected.date_acquired_string(),
             &expected.quantity.to_string(),
-            &expected.cost_basis.amount.to_string()
+            &expected.cost_basis.amount.to_string(),
         );
         assert_eq_ignore_id(lot_fixture(), lot)
     }
@@ -264,7 +270,7 @@ mod tests {
             &fixture.symbol,
             &date_acquired,
             &fixture.quantity.to_string(),
-            &fixture.cost_basis.amount.to_string()
+            &fixture.cost_basis.amount.to_string(),
         );
         assert_format_err("date", lot);
     }
@@ -278,7 +284,7 @@ mod tests {
             &fixture.symbol,
             &fixture.date_acquired_string(),
             quantity,
-            &fixture.cost_basis.amount.to_string()
+            &fixture.cost_basis.amount.to_string(),
         );
         assert_format_err("quantity", lot);
     }
@@ -292,7 +298,7 @@ mod tests {
             &fixture.symbol,
             &fixture.date_acquired_string(),
             &fixture.quantity.to_string(),
-            cost_basis
+            cost_basis,
         );
         assert_format_err("cost_basis", lot);
     }
@@ -308,9 +314,9 @@ mod tests {
             quantity: Decimal::from(-1),
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "quantity".to_string(),
-            reason : Reason::MustBePositive
+        let expected_error = Invalid {
+            field: "quantity".to_string(),
+            reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -321,9 +327,9 @@ mod tests {
             cost_basis: Currency::new(Decimal::from(0), "USD").unwrap(),
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "cost_basis".to_string(),
-            reason : Reason::MustBePositive
+        let expected_error = Invalid {
+            field: "cost_basis".to_string(),
+            reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -334,9 +340,9 @@ mod tests {
             cost_basis: Currency::new(Decimal::from(-1), "USD").unwrap(),
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "cost_basis".to_string(),
-            reason : Reason::MustBePositive
+        let expected_error = Invalid {
+            field: "cost_basis".to_string(),
+            reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -347,9 +353,9 @@ mod tests {
             quantity: Decimal::ZERO,
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "quantity".to_string(),
-            reason : Reason::MustBePositive
+        let expected_error = Invalid {
+            field: "quantity".to_string(),
+            reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -382,9 +388,9 @@ mod tests {
             account: String::from(""),
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "account".to_string(),
-            reason : Reason::MustHaveLongerLen
+        let expected_error = Invalid {
+            field: "account".to_string(),
+            reason: Reason::MustHaveLongerLen,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -396,9 +402,9 @@ mod tests {
             ..lot_fixture()
         };
 
-        let expected_error = Invalid{
-            field : "account".to_string(),
-            reason : Reason::MustHaveShorterLen
+        let expected_error = Invalid {
+            field: "account".to_string(),
+            reason: Reason::MustHaveShorterLen,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -409,9 +415,9 @@ mod tests {
             symbol: String::from(""),
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "symbol".to_string(),
-            reason : Reason::MustHaveLongerLen
+        let expected_error = Invalid {
+            field: "symbol".to_string(),
+            reason: Reason::MustHaveLongerLen,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }
@@ -422,9 +428,9 @@ mod tests {
             symbol: String::from("VOODOO"),
             ..lot_fixture()
         };
-        let expected_error = Invalid{
-            field : "symbol".to_string(),
-            reason : Reason::MustHaveShorterLen
+        let expected_error = Invalid {
+            field: "symbol".to_string(),
+            reason: Reason::MustHaveShorterLen,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
     }

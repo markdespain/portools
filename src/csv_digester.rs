@@ -1,4 +1,4 @@
-use crate::portfolio::Lot;
+use crate::model::Lot;
 use crate::util::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
