@@ -75,7 +75,6 @@ impl Lot {
             .parse()
             .map_err(|error| Invalid::format_error("quantity", &error))?;
 
-        // todo: support other currencies
         let cost_basis = Money::from_str(cost_basis_amount, iso::USD)
             .map_err(|error| Invalid::format_error("cost_basis", &error))?;
         let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())?;

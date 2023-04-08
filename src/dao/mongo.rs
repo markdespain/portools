@@ -18,7 +18,6 @@ pub struct MongoDao {
 impl Dao for MongoDao {
     async fn put_lots(&self, lots: &[Lot]) -> Result<(), Error> {
         let collection: Collection<Lot> = self.client.database(DB_NAME).collection(COLL_NAME);
-        // todo: change to upsert, or delete-all then insert
         let result = collection.insert_many(lots, None).await;
         match result {
             Ok(_) => Ok(()), // note: this could return the inserted ids
@@ -52,6 +51,5 @@ pub async fn create_lots_index(client: &Client) {
         .collection::<Lot>(COLL_NAME)
         .create_index(model, None)
         .await
-        // todo: replace expect with proper error
         .expect("creating an index should succeed");
 }

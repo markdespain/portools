@@ -18,12 +18,6 @@ pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
         match record {
             Ok(r) => match to_lot(&field_to_index, &r) {
                 Ok(lot) => {
-                    // todo: apply reasonable, configurable limits to the Lot values
-                    // e.g. date shouldn't be in the ancient past
-                    //      quantity shouldn't be absurdly high
-                    //      cost_basis shouldn't be absurdly high
-                    //      (quantity * cost_basis) shouldn't be absurdly high
-                    //      total portfolio value shouldn't be absurdly high
                     lots.push(lot);
                 }
                 Err(e) => {

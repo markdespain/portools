@@ -24,7 +24,6 @@ struct AppLimits {
     max_num_lots: usize,
 }
 
-// TODO: allow limits to be configurable
 const APP_LIMITS: AppLimits = AppLimits {
     max_file_size: 10_000,
     max_num_lots: 10_000,
@@ -79,7 +78,6 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    // todo: refine so that docker and non-Docker flows are seamless
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
 
     let client = Client::with_uri_str(uri).await.expect("failed to connect");
@@ -98,7 +96,6 @@ async fn main() -> io::Result<()> {
 }
 
 struct AppState {
-    // todo: abstract as Dao, move Mutex and Client into respective dao implementations
     dao: Box<dyn dao::Dao + Send + Sync>,
 }
 

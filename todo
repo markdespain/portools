@@ -1,0 +1,23 @@
+mongo.rs:: put_lots should have upsert semantics instead of insert semantics
+
+mongo.rs:: create_lots_index() should return an error instead of calling expect (panicking)
+mongo.rs:: don't create the index on application startup
+
+main.rs:: allow Mongo URI to be configurable; make sure that cargo at Docker workflows work
+
+csv_digester.rs: apply reasonable, configurable limits to the Lot values
+// e.g. date shouldn't be in the ancient past
+//      quantity shouldn't be absurdly high
+//      cost_basis shouldn't be absurdly high
+//      (quantity * cost_basis) shouldn't be absurdly high
+//      total portfolio value shouldn't be absurdly high
+
+main.rs: allow AppLimits to be configurable
+
+util.rs: Reason should accept the causing error instead of a String
+
+model.rs: support currencies other than USD
+- ideal: every lot can have it's own currency
+
+
+

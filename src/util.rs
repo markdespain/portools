@@ -47,8 +47,8 @@ pub enum Reason {
     MustBePositive,
     MustHaveLongerLen,
     MustHaveShorterLen,
-    DecodingError { cause: String }, // todo: accept the causing error
-    FormatError { cause: String },   // todo: accept the causing error
+    DecodingError { cause: String },
+    FormatError { cause: String },
 }
 
 pub fn validate_positive(field: &str, value: &Decimal) -> Result<(), Invalid> {
