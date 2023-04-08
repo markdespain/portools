@@ -13,9 +13,11 @@ use actix_web::{
     web::{Data, Json},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
+use dao::mongo;
 use mongodb::Client;
 use std::io;
-use std::sync::Mutex;
+
+use dao::mongo::MongoDao;
 
 struct AppLimits {
     max_file_size: usize,
@@ -30,7 +32,7 @@ const APP_LIMITS: AppLimits = AppLimits {
 
 #[get("/lots")]
 async fn get_lots(data: Data<AppState>) -> actix_web::Result<Json<Vec<Lot>>> {
-    match dao::get_lots(&data.client).await {
+    match data.dao.get_lots().await {
         Ok(lots) => Ok(Json(lots)),
         Err(e) => {
             println!("get_lots error: {e}");
@@ -60,7 +62,7 @@ async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> im
             if lots.len() > APP_LIMITS.max_num_lots {
                 return HttpResponse::PayloadTooLarge();
             }
-            match dao::put_lots(&data.client, lots).await {
+            match data.dao.put_lots(lots).await {
                 Ok(_) => HttpResponse::Ok(),
                 Err(e) => {
                     println!("get_lots error: {e}");
@@ -81,7 +83,7 @@ async fn main() -> io::Result<()> {
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
 
     let client = Client::with_uri_str(uri).await.expect("failed to connect");
-    dao::create_lots_index(&client).await;
+    mongo::create_lots_index(&client).await;
 
     let app_state = Data::new(AppState::new(client));
     HttpServer::new(move || {
@@ -97,25 +99,13 @@ async fn main() -> io::Result<()> {
 
 struct AppState {
     // todo: abstract as Dao, move Mutex and Client into respective dao implementations
-    lots: Mutex<Vec<Lot>>,
-    client: Client,
+    dao: Box<dyn dao::Dao + Send + Sync>,
 }
 
 impl AppState {
     fn new(client: Client) -> AppState {
         AppState {
-            lots: Mutex::new(Vec::new()),
-            client,
+            dao: Box::new(MongoDao { client }),
         }
-    }
-
-    fn set_lots(&self, new_lots: Vec<Lot>) {
-        let mut l = self.lots.lock().unwrap();
-        *l = new_lots;
-    }
-
-    fn get_lots(&self) -> Vec<Lot> {
-        let l = self.lots.lock().unwrap();
-        l.to_vec()
     }
 }
