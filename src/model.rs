@@ -1,4 +1,4 @@
-use crate::util::{trim_and_validate_len, validate_positive, Invalid};
+use crate::validate::{trim_and_validate_len, validate_positive, Invalid};
 use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
 use rusty_money::{iso, FormattableCurrency, Money};
@@ -69,14 +69,14 @@ impl Lot {
         cost_basis_amount: &str,
     ) -> Result<Lot, Invalid> {
         let date = NaiveDate::parse_from_str(date, Lot::DATE_FORMAT)
-            .map_err(|error| Invalid::format_error("date", &error))?;
+            .map_err(|error| Invalid::parse_date_error("date", error))?;
 
         let quantity = quantity
             .parse()
-            .map_err(|error| Invalid::format_error("quantity", &error))?;
+            .map_err(|error| Invalid::parse_decimal_error("quantity", error))?;
 
         let cost_basis = Money::from_str(cost_basis_amount, iso::USD)
-            .map_err(|error| Invalid::format_error("cost_basis", &error))?;
+            .map_err(|error| Invalid::parse_money_error("cost_basis", error))?;
         let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())?;
 
         Lot::new(account, symbol, date, quantity, cost_basis)
@@ -117,8 +117,8 @@ impl Lot {
 #[cfg(test)]
 mod tests {
     use crate::model::{Currency, Lot};
-    use crate::util::Reason::FormatError;
-    use crate::util::{Invalid, Reason};
+    use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
+    use crate::validate::{Invalid, Reason};
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
     use uuid::uuid;
@@ -228,7 +228,7 @@ mod tests {
                     "field name should match expected"
                 );
                 match actual_err.reason {
-                    FormatError { .. } => {
+                    ParseDecimalError { .. } => {
                         // skip assertion of error message, since it may change unexpectedly due
                         // to being human readable and due to potentially coming from an external
                         // library
@@ -243,6 +243,55 @@ mod tests {
             }
             Ok(actual_lot) => {
                 panic!("expected Err but got Ok: {:?}", actual_lot);
+            }
+        }
+    }
+
+    fn assert_invalid(expected_field: &str, actual: Result<Lot, Invalid>) -> Invalid {
+        match actual {
+            Err(actual_err) => {
+                assert_eq!(
+                    expected_field, actual_err.field,
+                    "field name should match expected"
+                );
+                actual_err
+            }
+            Ok(actual_lot) => {
+                panic!("expected Err(Invalid) but got Ok: {:?}", actual_lot);
+            }
+        }
+    }
+
+    fn assert_parse_money_error(expected_field: &str, actual: Result<Lot, Invalid>) {
+        let actual_err = assert_invalid(expected_field, actual);
+        match actual_err.reason {
+            ParseMoneyError { .. } => {
+                // skip assertion of error message, since it may change unexpectedly due
+                // to being human readable and due to potentially coming from an external
+                // library
+            }
+            unexpected_error => {
+                panic!(
+                    "expected reason to be ParseMoneyError but got: {:?}",
+                    unexpected_error
+                );
+            }
+        }
+    }
+
+    fn assert_parse_date_error(expected_field: &str, actual: Result<Lot, Invalid>) {
+        let actual_err = assert_invalid(expected_field, actual);
+        match actual_err.reason {
+            ParseDateError { .. } => {
+                // skip assertion of error message, since it may change unexpectedly due
+                // to being human readable and due to potentially coming from an external
+                // library
+            }
+            unexpected_error => {
+                panic!(
+                    "expected reason to be ParseMoneyError but got: {:?}",
+                    unexpected_error
+                );
             }
         }
     }
@@ -271,7 +320,7 @@ mod tests {
             &fixture.quantity.to_string(),
             &fixture.cost_basis.amount.to_string(),
         );
-        assert_format_err("date", lot);
+        assert_parse_date_error("date", lot);
     }
 
     #[test]
@@ -299,7 +348,7 @@ mod tests {
             &fixture.quantity.to_string(),
             cost_basis,
         );
-        assert_format_err("cost_basis", lot);
+        assert_parse_money_error("cost_basis", lot);
     }
 
     #[test]

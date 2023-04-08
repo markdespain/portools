@@ -1,4 +1,6 @@
+use chrono::ParseError;
 use rust_decimal::Decimal;
+use rusty_money::MoneyError;
 use std::error::Error;
 
 #[derive(Debug, PartialEq)]
@@ -16,10 +18,7 @@ impl Invalid {
     }
 
     pub fn required_str(field: &str) -> Invalid {
-        Invalid {
-            field: field.to_string(),
-            reason: Reason::Required,
-        }
+        Invalid::required(field.to_string())
     }
 
     pub fn decoding_error(field: String, cause: &dyn Error) -> Invalid {
@@ -31,12 +30,33 @@ impl Invalid {
         }
     }
 
-    pub fn format_error(field: &str, cause: &dyn Error) -> Invalid {
+    pub fn unknown_error(field: &str, cause: &dyn Error) -> Invalid {
         Invalid {
             field: field.to_string(),
-            reason: Reason::FormatError {
+            reason: Reason::UnknownError {
                 cause: cause.to_string(),
             },
+        }
+    }
+
+    pub fn parse_decimal_error(field: &str, cause: rust_decimal::Error) -> Invalid {
+        Invalid {
+            field: field.to_string(),
+            reason: Reason::ParseDecimalError { cause },
+        }
+    }
+
+    pub fn parse_money_error(field: &str, cause: MoneyError) -> Invalid {
+        Invalid {
+            field: field.to_string(),
+            reason: Reason::ParseMoneyError { cause },
+        }
+    }
+
+    pub fn parse_date_error(field: &str, cause: ParseError) -> Invalid {
+        Invalid {
+            field: field.to_string(),
+            reason: Reason::ParseDateError { cause },
         }
     }
 }
@@ -48,7 +68,10 @@ pub enum Reason {
     MustHaveLongerLen,
     MustHaveShorterLen,
     DecodingError { cause: String },
-    FormatError { cause: String },
+    UnknownError { cause: String },
+    ParseDecimalError { cause: rust_decimal::Error },
+    ParseDateError { cause: ParseError },
+    ParseMoneyError { cause: MoneyError },
 }
 
 pub fn validate_positive(field: &str, value: &Decimal) -> Result<(), Invalid> {

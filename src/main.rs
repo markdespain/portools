@@ -2,7 +2,7 @@ mod actix_util;
 mod csv_digester;
 mod dao;
 mod model;
-mod util;
+mod validate;
 
 use crate::csv_digester::csv_to_lot;
 use crate::model::Lot;

@@ -1,5 +1,5 @@
 use crate::model::Lot;
-use crate::util::Invalid;
+use crate::validate::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
 use std::collections::HashMap;
@@ -7,9 +7,12 @@ use std::collections::HashMap;
 pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
     let mut rdr = csv::Reader::from_reader(csv.reader());
     let mut field_to_index = HashMap::with_capacity(5);
+    if !rdr.has_headers() {
+        return Err(Invalid::required_str("csv_headers"));
+    }
     let headers = rdr
         .headers()
-        .map_err(|error| Invalid::format_error("headers", &error))?;
+        .map_err(|error| Invalid::unknown_error("csv_headers", &error))?;
     for (i, header) in headers.iter().enumerate() {
         field_to_index.insert(header.to_owned(), i);
     }

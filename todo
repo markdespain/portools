@@ -1,6 +1,6 @@
 mongo.rs:: put_lots should have upsert semantics instead of insert semantics
-
 mongo.rs:: create_lots_index() should return an error instead of calling expect (panicking)
+mongo.rs:: see if data types of some inserted fields can be changed to be numeric
 mongo.rs:: don't create the index on application startup
 
 main.rs:: allow Mongo URI to be configurable; make sure that cargo at Docker workflows work
@@ -14,10 +14,10 @@ csv_digester.rs: apply reasonable, configurable limits to the Lot values
 
 main.rs: allow AppLimits to be configurable
 
-util.rs: Reason should accept the causing error instead of a String
+container: get k8s (preferred) or Docker Compose workflow going
 
 model.rs: support currencies other than USD
 - ideal: every lot can have it's own currency
 
-
-
+local.rs: address "never used" warning by either writing tests that use it or indicate that it is for testing
+local.rs: replace MutexDao with read/wrote lock or some lock-free structure
