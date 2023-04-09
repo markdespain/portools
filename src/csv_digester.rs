@@ -3,6 +3,7 @@ use crate::validate::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
     let mut rdr = csv::Reader::from_reader(csv.reader());
@@ -38,6 +39,7 @@ pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
 
 fn to_lot(field_to_index: &HashMap<String, usize>, record: &StringRecord) -> Result<Lot, Invalid> {
     Lot::from_str(
+        Uuid::new_v4(),
         get_field("account", field_to_index, record)?,
         get_field("symbol", field_to_index, record)?,
         get_field("date_acquired", field_to_index, record)?,
@@ -58,4 +60,29 @@ fn get_field<'a>(
         .get(*field_index)
         .ok_or(Invalid::required_str(field))?;
     Ok(field_value)
+}
+
+
+#[cfg(test)]
+mod test {
+    use std::fs;
+    use std::path::PathBuf;
+    use actix_web::web::Bytes;
+    use crate::csv_digester::csv_to_lot;
+
+    fn load_resource(resource: &str) -> Bytes{
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("resource/test/csv_digester/");
+        path.push(resource);
+        let p = path.display();
+        println!("path: {p}");
+        Bytes::from(fs::read(path).unwrap())
+    }
+
+    #[test]
+    fn test_valid() {
+        let csv = load_resource("valid.csv");
+        let result = csv_to_lot(Bytes::from(csv));
+        // todo: assert result after refactoring
+    }
 }

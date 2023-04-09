@@ -62,6 +62,7 @@ impl Lot {
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
     pub fn from_str(
+        id: Uuid,
         account: &str,
         symbol: &str,
         date: &str,
@@ -79,10 +80,11 @@ impl Lot {
             .map_err(|error| Invalid::parse_money_error("cost_basis", error))?;
         let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())?;
 
-        Lot::new(account, symbol, date, quantity, cost_basis)
+        Lot::new(id, account, symbol, date, quantity, cost_basis)
     }
 
     pub fn new(
+        id: Uuid,
         account: &str,
         symbol: &str,
         date_acquired: NaiveDate,
@@ -100,7 +102,7 @@ impl Lot {
         validate_positive("quantity", &quantity)?;
         validate_positive("cost_basis", &cost_basis.amount)?;
         Ok(Lot {
-            id: Uuid::new_v4(),
+            id,
             account,
             symbol,
             date_acquired,
@@ -149,6 +151,7 @@ mod tests {
     // for testing purposes
     fn new_lot_from_spec(lot: Lot) -> Result<Lot, Invalid> {
         Lot::new(
+            lot.id,
             &lot.account,
             &lot.symbol,
             lot.date_acquired,
@@ -300,6 +303,7 @@ mod tests {
     fn lot_from_str_valid() {
         let expected = lot_fixture();
         let lot = Lot::from_str(
+            expected.id,
             &expected.account,
             &expected.symbol,
             &expected.date_acquired_string(),
@@ -314,6 +318,7 @@ mod tests {
         let fixture = lot_fixture();
         let date_acquired = format!("{}", fixture.date_acquired.format("%Y-%m-%d"));
         let lot = Lot::from_str(
+            fixture.id,
             &fixture.account,
             &fixture.symbol,
             &date_acquired,
@@ -328,6 +333,7 @@ mod tests {
         let fixture = lot_fixture();
         let quantity = "not a number";
         let lot = Lot::from_str(
+            fixture.id,
             &fixture.account,
             &fixture.symbol,
             &fixture.date_acquired_string(),
@@ -342,6 +348,7 @@ mod tests {
         let fixture = lot_fixture();
         let cost_basis = "not a number";
         let lot = Lot::from_str(
+            fixture.id,
             &fixture.account,
             &fixture.symbol,
             &fixture.date_acquired_string(),
