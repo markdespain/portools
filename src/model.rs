@@ -119,10 +119,13 @@ impl Lot {
 #[cfg(test)]
 mod tests {
     use crate::model::{Currency, Lot};
+    use crate::test_util;
+    use crate::test_util::assertion::assert_err;
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
+    use test_util::assertion::assert_ok;
     use uuid::uuid;
 
     // Currency Tests
@@ -148,8 +151,7 @@ mod tests {
         }
     }
 
-    // for testing purposes
-    fn new_lot_from_spec(lot: Lot) -> Result<Lot, Invalid> {
+    fn new_from_spec(lot: Lot) -> Result<Lot, Invalid> {
         Lot::new(
             lot.id,
             &lot.account,
@@ -189,38 +191,13 @@ mod tests {
     // Lot tests
 
     fn assert_new_from_spec(expected: Lot, spec: Lot) {
-        let actual = new_lot_from_spec(spec);
-        assert_eq_ignore_id(expected, actual);
-    }
-
-    fn assert_eq_ignore_id(mut expected: Lot, actual: Result<Lot, Invalid>) {
-        match actual {
-            Err(e) => {
-                panic!("expected Ok but got Err: {:?}", e)
-            }
-            Ok(actual_lot) => {
-                // since the actual Lot will have its own unique id, set the expected lot's id
-                // to the actual's so that an equality check can be easily done
-                expected.id = actual_lot.id;
-                assert_eq!(expected, actual_lot);
-            }
-        }
+        let actual = new_from_spec(spec);
+        assert_ok(&expected, &actual);
     }
 
     fn assert_new_from_spec_is_err(spec: Lot, expected_err: Invalid) {
-        let actual = new_lot_from_spec(spec);
+        let actual = new_from_spec(spec);
         assert_err(expected_err, actual);
-    }
-
-    fn assert_err(expected_err: Invalid, actual: Result<Lot, Invalid>) {
-        match actual {
-            Err(actual_err) => {
-                assert_eq!(expected_err, actual_err)
-            }
-            Ok(actual_lot) => {
-                panic!("expected Err but got Ok: {:?}", actual_lot);
-            }
-        }
     }
 
     fn assert_format_err(expected_field: &str, actual: Result<Lot, Invalid>) {
@@ -310,7 +287,7 @@ mod tests {
             &expected.quantity.to_string(),
             &expected.cost_basis.amount.to_string(),
         );
-        assert_eq_ignore_id(lot_fixture(), lot)
+        assert_ok(&lot_fixture(), &lot)
     }
 
     #[test]

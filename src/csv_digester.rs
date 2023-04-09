@@ -62,15 +62,14 @@ fn get_field<'a>(
     Ok(field_value)
 }
 
-
 #[cfg(test)]
 mod test {
+    use crate::csv_digester::csv_to_lot;
+    use actix_web::web::Bytes;
     use std::fs;
     use std::path::PathBuf;
-    use actix_web::web::Bytes;
-    use crate::csv_digester::csv_to_lot;
 
-    fn load_resource(resource: &str) -> Bytes{
+    fn load_resource(resource: &str) -> Bytes {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resource/test/csv_digester/");
         path.push(resource);
