@@ -19,7 +19,9 @@ pub mod assertion {
         }
     }
 
-    pub fn assert_err(expected_err: Invalid, actual: Result<Lot, Invalid>) {
+    pub fn assert_err<T, E>(expected_err: E, actual: Result<T, E>)
+    where T : Debug, E: Debug + PartialEq,
+    {
         match actual {
             Err(actual_err) => {
                 assert_eq!(expected_err, actual_err)
