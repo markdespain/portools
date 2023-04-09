@@ -120,12 +120,12 @@ impl Lot {
 mod tests {
     use crate::model::{Currency, Lot};
     use crate::test_util;
-    use crate::test_util::assertion::assert_err;
+    use crate::test_util::assertion::{assert_err_eq, assert_is_err};
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
     use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
-    use test_util::assertion::assert_ok;
+    use test_util::assertion::assert_ok_eq;
     use uuid::uuid;
 
     // Currency Tests
@@ -192,54 +192,38 @@ mod tests {
 
     fn assert_new_from_spec(expected: Lot, spec: Lot) {
         let actual = new_from_spec(spec);
-        assert_ok(&expected, &actual);
+        assert_ok_eq(&expected, &actual);
     }
 
     fn assert_new_from_spec_is_err(spec: Lot, expected_err: Invalid) {
         let actual = new_from_spec(spec);
-        assert_err(expected_err, actual);
+        assert_err_eq(expected_err, actual);
     }
 
-    fn assert_format_err(expected_field: &str, actual: Result<Lot, Invalid>) {
-        match actual {
-            Err(actual_err) => {
-                assert_eq!(
-                    expected_field, actual_err.field,
-                    "field name should match expected"
-                );
-                match actual_err.reason {
-                    ParseDecimalError { .. } => {
-                        // skip assertion of error message, since it may change unexpectedly due
-                        // to being human readable and due to potentially coming from an external
-                        // library
-                    }
-                    unexpected_error => {
-                        panic!(
-                            "expected reason to be Invalid::FormatError but got: {:?}",
-                            unexpected_error
-                        );
-                    }
-                }
+    fn assert_format_err(expected_field: &str, result: Result<Lot, Invalid>) {
+        let actual_err = assert_invalid(expected_field, result);
+        match actual_err.reason {
+            ParseDecimalError { .. } => {
+                // skip assertion of error message, since it may change unexpectedly due
+                // to being human readable and due to potentially coming from an external
+                // library
             }
-            Ok(actual_lot) => {
-                panic!("expected Err but got Ok: {:?}", actual_lot);
+            unexpected_error => {
+                panic!(
+                    "expected reason to be Invalid::FormatError but got: {:?}",
+                    unexpected_error
+                );
             }
         }
     }
 
-    fn assert_invalid(expected_field: &str, actual: Result<Lot, Invalid>) -> Invalid {
-        match actual {
-            Err(actual_err) => {
-                assert_eq!(
-                    expected_field, actual_err.field,
-                    "field name should match expected"
-                );
-                actual_err
-            }
-            Ok(actual_lot) => {
-                panic!("expected Err(Invalid) but got Ok: {:?}", actual_lot);
-            }
-        }
+    fn assert_invalid(expected_field: &str, result: Result<Lot, Invalid>) -> Invalid {
+        let invalid = assert_is_err(result);
+        assert_eq!(
+            expected_field, invalid.field,
+            "field name should match expected"
+        );
+        invalid
     }
 
     fn assert_parse_money_error(expected_field: &str, actual: Result<Lot, Invalid>) {
@@ -287,7 +271,7 @@ mod tests {
             &expected.quantity.to_string(),
             &expected.cost_basis.amount.to_string(),
         );
-        assert_ok(&lot_fixture(), &lot)
+        assert_ok_eq(&lot_fixture(), &lot)
     }
 
     #[test]
