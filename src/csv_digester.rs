@@ -105,7 +105,6 @@ mod test {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resource/test/csv_digester/");
         path.push(resource);
-        // to do: use buffered reader
         Bytes::from(fs::read(path).unwrap())
     }
 
