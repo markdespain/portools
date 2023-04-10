@@ -2,80 +2,16 @@ mod actix_util;
 mod csv_digester;
 mod dao;
 mod model;
+mod service;
 mod test_util;
 mod validate;
 
-use crate::csv_digester::csv_to_lot;
-use crate::model::Lot;
-use actix_util::ContentLengthHeaderError;
-use actix_util::ContentLengthHeaderError::Malformed;
-use actix_web::{
-    error, get, put, web,
-    web::{Data, Json},
-    App, HttpRequest, HttpResponse, HttpServer, Responder,
-};
+use actix_web::{web::Data, App, HttpServer};
 use dao::mongo;
 use mongodb::Client;
 use std::io;
 
-use dao::mongo::MongoDao;
-
-struct AppLimits {
-    max_file_size: usize,
-    max_num_lots: usize,
-}
-
-const APP_LIMITS: AppLimits = AppLimits {
-    max_file_size: 10_000,
-    max_num_lots: 10_000,
-};
-
-#[get("/lots")]
-async fn get_lots(data: Data<AppState>) -> actix_web::Result<Json<Vec<Lot>>> {
-    match data.dao.get_lots().await {
-        Ok(lots) => Ok(Json(lots)),
-        Err(e) => {
-            println!("get_lots error: {e}");
-            Err(error::ErrorInternalServerError(e))
-        }
-    }
-}
-
-#[put("/lots")]
-async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<AppState>) -> impl Responder {
-    let content_length = actix_util::get_content_length_header(&req);
-    if content_length.is_err() {
-        return match content_length.unwrap_err() {
-            Malformed(message) => {
-                println!("bad request: {message}");
-                HttpResponse::BadRequest()
-            }
-            ContentLengthHeaderError::Missing => HttpResponse::LengthRequired(),
-        };
-    }
-    let content_length = content_length.unwrap();
-    if content_length > APP_LIMITS.max_file_size {
-        return HttpResponse::PayloadTooLarge();
-    }
-    match csv_to_lot(csv) {
-        Ok(ref lots) => {
-            if lots.len() > APP_LIMITS.max_num_lots {
-                return HttpResponse::PayloadTooLarge();
-            }
-            match data.dao.put_lots(lots).await {
-                Ok(_) => HttpResponse::Ok(),
-                Err(e) => {
-                    println!("get_lots error: {e}");
-                    HttpResponse::InternalServerError()
-                }
-            }
-        }
-        Err(e) => {
-            println!("Invalid upload: {:?}", e);
-            HttpResponse::BadRequest()
-        }
-    }
-}
+use service::state::State;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -84,26 +20,14 @@ async fn main() -> io::Result<()> {
     let client = Client::with_uri_str(uri).await.expect("failed to connect");
     mongo::create_lots_index(&client).await;
 
-    let app_state = Data::new(AppState::new(client));
+    let app_state = Data::new(State::new(client));
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
-            .service(get_lots)
-            .service(put_lots)
+            .service(service::get_lots)
+            .service(service::put_lots)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
     .await
-}
-
-struct AppState {
-    dao: Box<dyn dao::Dao + Send + Sync>,
-}
-
-impl AppState {
-    fn new(client: Client) -> AppState {
-        AppState {
-            dao: Box::new(MongoDao { client }),
-        }
-    }
 }
