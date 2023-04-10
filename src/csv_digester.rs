@@ -8,14 +8,14 @@ use uuid::Uuid;
 pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
     let mut rdr = csv::Reader::from_reader(csv.reader());
     let mut field_to_index = HashMap::with_capacity(5);
-    if !rdr.has_headers() {
-        return Err(Invalid::required_str("csv_headers"));
-    }
     let headers = rdr
         .headers()
         .map_err(|error| Invalid::unknown_error("csv_headers", &error))?;
     for (i, header) in headers.iter().enumerate() {
         field_to_index.insert(header.to_owned(), i);
+    }
+    if headers.is_empty() {
+        return Err(Invalid::required_str("csv_headers"));
     }
     let mut lots = Vec::new();
     for (row, record) in rdr.records().enumerate() {
@@ -55,7 +55,7 @@ fn get_field<'a>(
 ) -> Result<&'a str, Invalid> {
     let field_index = field_to_index
         .get(field)
-        .ok_or(Invalid::required(format!("column: {:?}", field)))?;
+        .ok_or(Invalid::required(format!("header: {:?}", field)))?;
     let field_value = record
         .get(*field_index)
         .ok_or(Invalid::required_str(field))?;
@@ -67,7 +67,7 @@ mod test {
     use crate::csv_digester::csv_to_lot;
     use crate::model::{Currency, Lot};
     use crate::test_util;
-    use crate::test_util::assertion::assert_vec_eq_fn;
+    use crate::test_util::assertion::{assert_err_eq, assert_vec_eq_fn};
     use actix_web::web::Bytes;
     use chrono::NaiveDate;
     use rust_decimal::Decimal;
@@ -75,6 +75,7 @@ mod test {
     use std::path::PathBuf;
     use test_util::fixture;
     use uuid::Uuid;
+    use crate::validate::Invalid;
 
     fn load_resource(resource: &str) -> Bytes {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -96,6 +97,13 @@ mod test {
         let eq_ignore_id = |a: &Lot, b: &Lot| a.eq_ignore_id(b);
         let result = csv_to_lot(Bytes::from(csv));
         assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+    }
+
+    #[test]
+    fn test_missing_header() {
+        let csv = load_resource("missing_header.csv");
+        let result = csv_to_lot(Bytes::from(csv));
+        assert_err_eq(Invalid::required_str("header: \"account\""), result);
     }
 
     fn new_lot(
