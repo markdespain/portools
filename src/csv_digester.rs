@@ -65,9 +65,16 @@ fn get_field<'a>(
 #[cfg(test)]
 mod test {
     use crate::csv_digester::csv_to_lot;
+    use crate::model::{Currency, Lot};
+    use crate::test_util;
+    use crate::test_util::assertion::assert_vec_eq_fn;
     use actix_web::web::Bytes;
+    use chrono::NaiveDate;
+    use rust_decimal::Decimal;
     use std::fs;
     use std::path::PathBuf;
+    use test_util::fixture;
+    use uuid::Uuid;
 
     fn load_resource(resource: &str) -> Bytes {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -81,7 +88,32 @@ mod test {
     #[test]
     fn test_valid() {
         let csv = load_resource("valid.csv");
+        let expected = vec![
+            new_lot("Taxable", "VOO", 27, 1, 100.47),
+            new_lot("IRA", "BND", 28, 2, 200.26),
+            new_lot("IRA", "BND", 29, 3, 300.23),
+        ];
+        let eq_ignore_id = |a: &Lot, b: &Lot| a.eq_ignore_id(b);
         let result = csv_to_lot(Bytes::from(csv));
-        // todo: assert result after refactoring
+        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+    }
+
+    fn new_lot(
+        account: &str,
+        symbol: &str,
+        day_of_month: u32,
+        quantity: u32,
+        cost_basis_usd: f64,
+    ) -> Lot {
+        let cost_basis = Currency::new(cost_basis_usd.to_string().parse().unwrap(), "USD").unwrap();
+        Lot::new(
+            Uuid::new_v4(),
+            account,
+            symbol,
+            NaiveDate::from_ymd_opt(2023, 3, day_of_month).unwrap(),
+            Decimal::from(quantity),
+            cost_basis,
+        )
+        .unwrap()
     }
 }

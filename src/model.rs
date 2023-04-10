@@ -111,8 +111,16 @@ impl Lot {
         })
     }
 
+    #[cfg(test)]
     fn date_acquired_string(&self) -> String {
         format!("{}", self.date_acquired.format(Lot::DATE_FORMAT))
+    }
+
+    #[cfg(test)]
+    pub fn eq_ignore_id(&self, other: &Lot) -> bool {
+        let mut other = other.clone();
+        other.id = self.id;
+        *self == other
     }
 }
 
@@ -123,10 +131,9 @@ mod tests {
     use crate::test_util::assertion::{assert_err_eq, assert_is_err};
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
-    use chrono::naive::NaiveDate;
     use rust_decimal::Decimal;
     use test_util::assertion::assert_ok_eq;
-    use uuid::uuid;
+    use test_util::fixture;
 
     // Currency Tests
 
@@ -134,20 +141,6 @@ mod tests {
         Currency {
             amount: Decimal::from(1),
             symbol: String::from("USD"),
-        }
-    }
-
-    fn lot_fixture() -> Lot {
-        Lot {
-            id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
-            account: String::from("Taxable"),
-            symbol: String::from("VOO"),
-            date_acquired: NaiveDate::from_ymd_opt(2023, 3, 23).unwrap(),
-            quantity: Decimal::from(6),
-            cost_basis: Currency {
-                amount: "300.64".parse().unwrap(),
-                symbol: String::from("USD"),
-            },
         }
     }
 
@@ -262,7 +255,7 @@ mod tests {
 
     #[test]
     fn lot_from_str_valid() {
-        let expected = lot_fixture();
+        let expected = fixture::lot();
         let lot = Lot::from_str(
             expected.id,
             &expected.account,
@@ -271,12 +264,12 @@ mod tests {
             &expected.quantity.to_string(),
             &expected.cost_basis.amount.to_string(),
         );
-        assert_ok_eq(&lot_fixture(), &lot)
+        assert_ok_eq(&fixture::lot(), &lot)
     }
 
     #[test]
     fn lot_from_str_with_date_with_invalid_format() {
-        let fixture = lot_fixture();
+        let fixture = fixture::lot();
         let date_acquired = format!("{}", fixture.date_acquired.format("%Y-%m-%d"));
         let lot = Lot::from_str(
             fixture.id,
@@ -291,7 +284,7 @@ mod tests {
 
     #[test]
     fn lot_from_str_with_quantity_not_an_decimal() {
-        let fixture = lot_fixture();
+        let fixture = fixture::lot();
         let quantity = "not a number";
         let lot = Lot::from_str(
             fixture.id,
@@ -306,7 +299,7 @@ mod tests {
 
     #[test]
     fn lot_from_str_with_cost_basis_not_an_number() {
-        let fixture = lot_fixture();
+        let fixture = fixture::lot();
         let cost_basis = "not a number";
         let lot = Lot::from_str(
             fixture.id,
@@ -321,14 +314,14 @@ mod tests {
 
     #[test]
     fn lot_new_valid() {
-        assert_new_from_spec(lot_fixture(), lot_fixture());
+        assert_new_from_spec(fixture::lot(), fixture::lot());
     }
 
     #[test]
     fn lot_new_with_negative_quantity() {
         let lot_spec = Lot {
             quantity: Decimal::from(-1),
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "quantity".to_string(),
@@ -341,7 +334,7 @@ mod tests {
     fn lot_new_with_zero_cost_basis() {
         let lot_spec = Lot {
             cost_basis: Currency::new(Decimal::from(0), "USD").unwrap(),
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "cost_basis".to_string(),
@@ -354,7 +347,7 @@ mod tests {
     fn lot_new_with_negative_cost_basis() {
         let lot_spec = Lot {
             cost_basis: Currency::new(Decimal::from(-1), "USD").unwrap(),
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "cost_basis".to_string(),
@@ -367,7 +360,7 @@ mod tests {
     fn lot_new_with_zero_quantity() {
         let lot_spec = Lot {
             quantity: Decimal::ZERO,
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "quantity".to_string(),
@@ -379,10 +372,10 @@ mod tests {
     #[test]
     fn lot_new_account_with_whitespace() {
         assert_new_from_spec(
-            lot_fixture(),
+            fixture::lot(),
             Lot {
                 account: String::from(" Taxable "),
-                ..lot_fixture()
+                ..fixture::lot()
             },
         );
     }
@@ -390,10 +383,10 @@ mod tests {
     #[test]
     fn lot_new_symbol_with_whitespace() {
         assert_new_from_spec(
-            lot_fixture(),
+            fixture::lot(),
             Lot {
                 symbol: String::from(" VOO "),
-                ..lot_fixture()
+                ..fixture::lot()
             },
         );
     }
@@ -402,7 +395,7 @@ mod tests {
     fn lot_new_account_too_short() {
         let lot_spec = Lot {
             account: String::from(""),
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "account".to_string(),
@@ -415,7 +408,7 @@ mod tests {
     fn lot_new_account_too_long() {
         let lot_spec = Lot {
             account: (0..101).map(|_| "X").collect(),
-            ..lot_fixture()
+            ..fixture::lot()
         };
 
         let expected_error = Invalid {
@@ -429,7 +422,7 @@ mod tests {
     fn lot_new_symbol_too_short() {
         let lot_spec = Lot {
             symbol: String::from(""),
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "symbol".to_string(),
@@ -442,7 +435,7 @@ mod tests {
     fn lot_new_symbol_too_long() {
         let lot_spec = Lot {
             symbol: String::from("VOODOO"),
-            ..lot_fixture()
+            ..fixture::lot()
         };
         let expected_error = Invalid {
             field: "symbol".to_string(),
