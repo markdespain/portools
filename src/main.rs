@@ -1,4 +1,3 @@
-mod actix_util;
 mod csv_digester;
 mod dao;
 mod model;
