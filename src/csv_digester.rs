@@ -3,21 +3,12 @@ use crate::validate::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
 use std::collections::HashMap;
+use std::iter::Map;
 use uuid::Uuid;
 
 pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
     let mut rdr = csv::Reader::from_reader(csv.reader());
-    let mut field_to_index = HashMap::with_capacity(5);
-    let headers = rdr
-        .headers()
-        .map_err(|error| Invalid::unknown_error("csv_headers", &error))?;
-    for (i, header) in headers.iter().enumerate() {
-        let header = header.trim().to_ascii_lowercase().to_string();
-        field_to_index.insert(header, i);
-    }
-    if headers.is_empty() {
-        return Err(Invalid::required_str("csv_headers"));
-    }
+    let mut field_to_index = create_headers_to_index(rdr.headers())?;
     let mut lots = Vec::new();
     for (row, record) in rdr.records().enumerate() {
         match record {
@@ -26,7 +17,7 @@ pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
                     lots.push(lot);
                 }
                 Err(e) => {
-                    println!("failed to convert record to Lot: {:?}", e);
+                    println!("failed to convert record {row} to Lot: {:?}", e);
                     return Err(e);
                 }
             },
@@ -36,6 +27,20 @@ pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
         }
     }
     Ok(lots)
+}
+
+fn create_headers_to_index(headers: Result<&StringRecord, csv::Error>) -> Result<HashMap<String, usize>, Invalid>{
+    let mut field_to_index = HashMap::with_capacity(5);
+    let headers = headers
+        .map_err(|error| Invalid::unknown_error("csv_headers", &error))?;
+    for (i, header) in headers.iter().enumerate() {
+        let header = header.trim().to_ascii_lowercase().to_string();
+        field_to_index.insert(header, i);
+    }
+    if headers.is_empty() {
+        return Err(Invalid::required_str("csv_headers"));
+    }
+    Ok(field_to_index)
 }
 
 fn to_lot(field_to_index: &HashMap<String, usize>, record: &StringRecord) -> Result<Lot, Invalid> {
