@@ -12,7 +12,8 @@ pub fn csv_to_lot(csv: Bytes) -> Result<Vec<Lot>, Invalid> {
         .headers()
         .map_err(|error| Invalid::unknown_error("csv_headers", &error))?;
     for (i, header) in headers.iter().enumerate() {
-        field_to_index.insert(header.to_owned(), i);
+        let header = header.trim().to_string();
+        field_to_index.insert(header, i);
     }
     if headers.is_empty() {
         return Err(Invalid::required_str("csv_headers"));
@@ -58,7 +59,8 @@ fn get_field<'a>(
         .ok_or(Invalid::required(format!("header: {:?}", field)))?;
     let field_value = record
         .get(*field_index)
-        .ok_or(Invalid::required_str(field))?;
+        .ok_or(Invalid::required_str(field))?
+        .trim();
     Ok(field_value)
 }
 
@@ -105,6 +107,18 @@ mod test {
     #[test]
     fn test_valid_different_column_order() {
         let csv = load_resource("valid_different_column_order.csv");
+        let expected = vec![
+            new_lot("Taxable", "VOO", 27, 1, 100.47),
+            new_lot("IRA", "BND", 28, 2, 200.26),
+            new_lot("IRA", "BND", 29, 3, 300.23),
+        ];
+        let result = csv_to_lot(Bytes::from(csv));
+        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+    }
+
+    #[test]
+    fn test_valid_with_whitespace() {
+        let csv = load_resource("valid_with_whitespace.csv");
         let expected = vec![
             new_lot("Taxable", "VOO", 27, 1, 100.47),
             new_lot("IRA", "BND", 28, 2, 200.26),
