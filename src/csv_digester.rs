@@ -94,8 +94,7 @@ mod test {
     use crate::test_util::assertion::{assert_err_eq, assert_vec_eq_fn};
     use crate::validate::Invalid;
     use actix_web::web::Bytes;
-    use chrono::format::ParseErrorKind;
-    use chrono::{NaiveDate, ParseError};
+    use chrono::NaiveDate;
     use rust_decimal::Decimal;
     use rusty_money::MoneyError::InvalidAmount;
     use std::fs;
