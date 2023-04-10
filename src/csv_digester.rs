@@ -106,6 +106,13 @@ mod test {
         assert_err_eq(Invalid::required_str("header: \"account\""), result);
     }
 
+    #[test]
+    fn test_missing_quantity_column() {
+        let csv = load_resource("missing_quantity_column.csv");
+        let result = csv_to_lot(Bytes::from(csv));
+        assert_err_eq(Invalid::required_str("header: \"quantity\""), result);
+    }
+
     fn new_lot(
         account: &str,
         symbol: &str,
