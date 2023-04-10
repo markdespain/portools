@@ -86,6 +86,10 @@ mod test {
         Bytes::from(fs::read(path).unwrap())
     }
 
+    fn eq_ignore_id(a: &Lot, b: &Lot) -> bool {
+        a.eq_ignore_id(b)
+    }
+
     #[test]
     fn test_valid() {
         let csv = load_resource("valid.csv");
@@ -94,7 +98,18 @@ mod test {
             new_lot("IRA", "BND", 28, 2, 200.26),
             new_lot("IRA", "BND", 29, 3, 300.23),
         ];
-        let eq_ignore_id = |a: &Lot, b: &Lot| a.eq_ignore_id(b);
+        let result = csv_to_lot(Bytes::from(csv));
+        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+    }
+
+    #[test]
+    fn test_valid_different_column_order() {
+        let csv = load_resource("valid_different_column_order.csv");
+        let expected = vec![
+            new_lot("Taxable", "VOO", 27, 1, 100.47),
+            new_lot("IRA", "BND", 28, 2, 200.26),
+            new_lot("IRA", "BND", 29, 3, 300.23),
+        ];
         let result = csv_to_lot(Bytes::from(csv));
         assert_vec_eq_fn(&expected, &result, eq_ignore_id);
     }
