@@ -1,7 +1,6 @@
 use chrono::ParseError;
 use rust_decimal::Decimal;
 use rusty_money::MoneyError;
-use std::error::Error;
 
 #[derive(Debug, PartialEq)]
 pub struct Invalid {
@@ -19,24 +18,6 @@ impl Invalid {
 
     pub fn required_str(field: &str) -> Invalid {
         Invalid::required(field.to_string())
-    }
-
-    pub fn decoding_error(field: String, cause: &dyn Error) -> Invalid {
-        Invalid {
-            field,
-            reason: Reason::DecodingError {
-                cause: cause.to_string(),
-            },
-        }
-    }
-
-    pub fn unknown_error(field: &str, cause: &dyn Error) -> Invalid {
-        Invalid {
-            field: field.to_string(),
-            reason: Reason::UnknownError {
-                cause: cause.to_string(),
-            },
-        }
     }
 
     pub fn parse_decimal_error(field: &str, cause: rust_decimal::Error) -> Invalid {
@@ -67,8 +48,6 @@ pub enum Reason {
     MustBePositive,
     MustHaveLongerLen,
     MustHaveShorterLen,
-    DecodingError { cause: String },
-    UnknownError { cause: String },
     ParseDecimalError { cause: rust_decimal::Error },
     ParseDateError { cause: ParseError },
     ParseMoneyError { cause: MoneyError },
