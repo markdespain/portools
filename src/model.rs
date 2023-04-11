@@ -116,7 +116,6 @@ impl Lot {
         format!("{}", self.date_acquired.format(Lot::DATE_FORMAT))
     }
 
-    #[cfg(test)]
     pub fn eq_ignore_id(&self, other: &Lot) -> bool {
         let mut other = other.clone();
         other.id = self.id;
@@ -127,13 +126,12 @@ impl Lot {
 #[cfg(test)]
 mod tests {
     use crate::model::{Currency, Lot};
-    use crate::test_util;
-    use crate::test_util::assertion::{assert_err_eq, assert_is_err};
+    use crate::unit_test_util::fixture;
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
     use rust_decimal::Decimal;
-    use test_util::assertion::assert_ok_eq;
-    use test_util::fixture;
+    use test_util;
+    use test_util::assertion::{assert_err_eq, assert_is_err, assert_ok_eq};
 
     // Currency Tests
 

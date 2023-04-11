@@ -91,78 +91,66 @@ fn get_field<'a>(
 mod test {
     use crate::csv_digester::{csv_to_lot, CsvError};
     use crate::model::{Currency, Lot};
-    use crate::test_util::assertion::{assert_err_eq, assert_vec_eq_fn};
+    use crate::unit_test_util::resource;
     use crate::validate::Invalid;
     use actix_web::web::Bytes;
     use chrono::NaiveDate;
     use rust_decimal::Decimal;
     use rusty_money::MoneyError::InvalidAmount;
-    use std::fs;
-    use std::path::PathBuf;
+    use test_util::assertion::{assert_err_eq, assert_result_vec_eq_fn};
     use uuid::Uuid;
-
-    fn load_resource(resource: &str) -> Bytes {
-        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        path.push("resource/test/csv_digester/");
-        path.push(resource);
-        Bytes::from(fs::read(path).unwrap())
-    }
-
-    fn eq_ignore_id(a: &Lot, b: &Lot) -> bool {
-        a.eq_ignore_id(b)
-    }
 
     #[test]
     fn test_valid() {
-        let csv = load_resource("valid.csv");
+        let csv = resource::load_bytes("valid.csv");
         let expected = vec![
             new_lot("Taxable", "VOO", 27, 1, 100.47),
             new_lot("IRA", "BND", 28, 2, 200.26),
             new_lot("IRA", "BND", 29, 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
     }
 
     #[test]
     fn test_valid_different_column_order() {
-        let csv = load_resource("valid_different_column_order.csv");
+        let csv = resource::load_bytes("valid_different_column_order.csv");
         let expected = vec![
             new_lot("Taxable", "VOO", 27, 1, 100.47),
             new_lot("IRA", "BND", 28, 2, 200.26),
             new_lot("IRA", "BND", 29, 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
     }
 
     #[test]
     fn test_valid_with_whitespace() {
-        let csv = load_resource("valid_with_whitespace.csv");
+        let csv = resource::load_bytes("valid_with_whitespace.csv");
         let expected = vec![
             new_lot("Taxable", "VOO", 27, 1, 100.47),
             new_lot("IRA", "BND", 28, 2, 200.26),
             new_lot("IRA", "BND", 29, 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
     }
 
     #[test]
     fn test_valid_with_capitalized_headers() {
-        let csv = load_resource("valid_with_capitalized_headers.csv");
+        let csv = resource::load_bytes("valid_with_capitalized_headers.csv");
         let expected = vec![
             new_lot("Taxable", "VOO", 27, 1, 100.47),
             new_lot("IRA", "BND", 28, 2, 200.26),
             new_lot("IRA", "BND", 29, 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_vec_eq_fn(&expected, &result, eq_ignore_id);
+        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
     }
 
     #[test]
     fn test_missing_header() {
-        let csv = load_resource("missing_header.csv");
+        let csv = resource::load_bytes("missing_header.csv");
         let result = csv_to_lot(Bytes::from(csv));
         assert_err_eq(
             CsvError::MissingHeader {
@@ -174,7 +162,7 @@ mod test {
 
     #[test]
     fn test_missing_quantity_column() {
-        let csv = load_resource("missing_quantity_column.csv");
+        let csv = resource::load_bytes("missing_quantity_column.csv");
         let result = csv_to_lot(Bytes::from(csv));
         assert_err_eq(
             CsvError::MissingHeader {
@@ -186,7 +174,7 @@ mod test {
 
     #[test]
     fn test_row_with_invalid_value() {
-        let csv = load_resource("row_with_invalid_value.csv");
+        let csv = resource::load_bytes("row_with_invalid_value.csv");
         let result = csv_to_lot(Bytes::from(csv));
         assert_err_eq(
             CsvError::RecordInvalid {
