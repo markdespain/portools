@@ -1,15 +1,13 @@
-use crate::dao;
-use crate::dao::mongo::MongoDao;
-use mongodb::Client;
+use crate::dao::Dao;
+
+pub type StateDao = dyn Dao + Send + Sync;
 
 pub struct State {
-    pub dao: Box<dyn dao::Dao + Send + Sync>,
+    pub dao: Box<StateDao>,
 }
 
 impl State {
-    pub fn new(client: Client) -> State {
-        State {
-            dao: Box::new(MongoDao { client }),
-        }
+    pub fn new(dao: Box<StateDao>) -> State {
+        State { dao }
     }
 }

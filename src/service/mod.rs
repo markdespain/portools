@@ -2,15 +2,21 @@ use crate::csv_digester::csv_to_lot;
 use crate::model::Lot;
 use crate::service::limits::LIMITS;
 use crate::service::state::State;
+use crate::service::util::ContentLengthHeaderError;
+use crate::service::util::ContentLengthHeaderError::Malformed;
 use actix_web::web::{Data, Json};
 use actix_web::{error, get, put, web, HttpRequest, HttpResponse, Responder};
 use ContentLengthHeaderError::Missing;
-use crate::service::util::ContentLengthHeaderError;
-use crate::service::util::ContentLengthHeaderError::Malformed;
 
 pub(crate) mod limits;
-pub(crate) mod state;
+pub mod state;
 pub(crate) mod util;
+
+pub fn config(cfg: &mut web::ServiceConfig, state: &Data<State>) {
+    cfg.service(get_lots)
+        .service(put_lots)
+        .app_data(state.clone());
+}
 
 #[get("/lots")]
 pub async fn get_lots(data: Data<State>) -> actix_web::Result<Json<Vec<Lot>>> {

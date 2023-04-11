@@ -1,21 +1,11 @@
-mod csv_digester;
-mod dao;
-mod model;
-mod service;
-mod test_util;
-mod validate;
-
-use actix_web::{web, web::Data, App, HttpServer};
-use dao::mongo;
+use actix_web::{web::Data, App, HttpServer};
 use mongodb::Client;
 use std::io;
 
-use service::state::State;
-
-fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(service::get_lots)
-        .service(service::put_lots);
-}
+use portools::dao::mongo;
+use portools::dao::mongo::MongoDao;
+use portools::service;
+use portools::service::state::State;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -24,13 +14,9 @@ async fn main() -> io::Result<()> {
     let client = Client::with_uri_str(uri).await.expect("failed to connect");
     mongo::create_lots_index(&client).await;
 
-    let app_state = Data::new(State::new(client));
-    HttpServer::new(move || {
-        App::new()
-            .app_data(app_state.clone())
-            .configure(config)
-    })
-    .bind(("0.0.0.0", 8080))?
-    .run()
-    .await
+    let app_state = Data::new(State::new(Box::new(MongoDao { client })));
+    HttpServer::new(move || App::new().configure(|cfg| service::config(cfg, &app_state)))
+        .bind(("0.0.0.0", 8080))?
+        .run()
+        .await
 }

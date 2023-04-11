@@ -1,10 +1,9 @@
-mod local;
-
 use crate::model::Lot;
 use async_trait::async_trait;
 use mongodb::error::Error;
 
-pub(crate) mod mongo;
+pub mod local;
+pub mod mongo;
 
 #[async_trait]
 pub trait Dao {

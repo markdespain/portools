@@ -4,16 +4,16 @@ use async_trait::async_trait;
 use mongodb::error::Error;
 use std::sync::Mutex;
 
+pub struct MutexDao {
+    lots: Mutex<Vec<Lot>>,
+}
+
 impl MutexDao {
-    fn new() -> MutexDao {
+    pub fn new() -> MutexDao {
         MutexDao {
             lots: Mutex::new(Vec::new()),
         }
     }
-}
-
-struct MutexDao {
-    lots: Mutex<Vec<Lot>>,
 }
 
 #[async_trait]
