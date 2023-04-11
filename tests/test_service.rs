@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use actix_web::web::Bytes;
+    use actix_web::web::{Bytes, ServiceConfig};
     use actix_web::web::Data;
     use actix_web::{test, App};
     use chrono::NaiveDate;
@@ -40,11 +40,15 @@ mod tests {
         .unwrap()
     }
 
+    fn test_config(cfg: &mut ServiceConfig) {
+        let app_state = Data::new(State::new(Box::new(MutexDao::new())));
+        service::config(cfg, &app_state);
+    }
+
     #[actix_web::test]
     async fn test_lots_get_empty() {
-        let app_state = Data::new(State::new(Box::new(MutexDao::new())));
-        let app =
-            test::init_service(App::new().configure(|cfg| service::config(cfg, &app_state))).await;
+        let app = test::init_service(App::new().configure(test_config)).await;
+
         let req = test::TestRequest::get().uri("/lots").to_request();
         let resp: Vec<Lot> = test::call_and_read_body_json(&app, req).await;
         assert_eq!(Vec::<Lot>::new(), resp);
@@ -52,9 +56,8 @@ mod tests {
 
     #[actix_web::test]
     async fn test_lots_put_with_valid() {
-        let app_state = Data::new(State::new(Box::new(MutexDao::new())));
         let app =
-            test::init_service(App::new().configure(|cfg| service::config(cfg, &app_state))).await;
+            test::init_service(App::new().configure(test_config)).await;
 
         // put the CSV
         let csv = load_bytes("valid.csv");
