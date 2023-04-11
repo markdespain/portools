@@ -4,20 +4,13 @@ use async_trait::async_trait;
 use mongodb::error::Error;
 use std::sync::Mutex;
 
-pub struct MutexDao {
+#[derive(Default)]
+pub struct InMemoryDao {
     lots: Mutex<Vec<Lot>>,
 }
 
-impl MutexDao {
-    pub fn new() -> MutexDao {
-        MutexDao {
-            lots: Mutex::new(Vec::new()),
-        }
-    }
-}
-
 #[async_trait]
-impl Dao for MutexDao {
+impl Dao for InMemoryDao {
     async fn put_lots(&self, lots: &[Lot]) -> Result<(), Error> {
         let mut l = self.lots.lock().unwrap();
         *l = lots.to_vec();

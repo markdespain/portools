@@ -4,7 +4,7 @@ mod tests {
     use actix_web::web::Data;
     use actix_web::{test, App};
     use chrono::NaiveDate;
-    use portools::dao::local::MutexDao;
+    use portools::dao::local::InMemoryDao;
     use portools::model::{Currency, Lot};
     use portools::service;
     use portools::service::state::State;
@@ -43,7 +43,7 @@ mod tests {
     }
 
     fn test_config(cfg: &mut ServiceConfig) {
-        let app_state = Data::new(State::new(Box::new(MutexDao::new())));
+        let app_state = Data::new(State::new(Box::<InMemoryDao>::new(Default::default())));
         service::config(cfg, &app_state);
     }
 
