@@ -5,12 +5,17 @@ mod service;
 mod test_util;
 mod validate;
 
-use actix_web::{web::Data, App, HttpServer};
+use actix_web::{web, web::Data, App, HttpServer};
 use dao::mongo;
 use mongodb::Client;
 use std::io;
 
 use service::state::State;
+
+fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(service::get_lots)
+        .service(service::put_lots);
+}
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -23,8 +28,7 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
-            .service(service::get_lots)
-            .service(service::put_lots)
+            .configure(config)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
