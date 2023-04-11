@@ -11,10 +11,10 @@ pub fn get_content_length_header(
         .ok_or(ContentLengthHeaderError::Missing)?;
     let header_value = header_value
         .to_str()
-        .map_err(|e| Malformed(format!("failed to convert content-length to a str: {e}")))?;
+        .map_err(|e| Malformed(format!("failed to convert content-length to a string: {e}")))?;
     let content_length = header_value
         .parse()
-        .map_err(|e| Malformed(format!("failed to parse content-length to to a u8: {e}")))?;
+        .map_err(|e| Malformed(format!("failed to parse content-length to a number: {e}")))?;
     if content_length > 0 {
         Ok(content_length)
     } else {
