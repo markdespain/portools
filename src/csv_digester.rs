@@ -104,9 +104,9 @@ mod test {
     fn test_valid() {
         let csv = resource::load_bytes("valid.csv");
         let expected = vec![
-            new_lot("Taxable", "VOO", 27, 1, 100.47),
-            new_lot("IRA", "BND", 28, 2, 200.26),
-            new_lot("IRA", "BND", 29, 3, 300.23),
+            new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+            new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+            new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
         assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
@@ -116,9 +116,9 @@ mod test {
     fn test_valid_different_column_order() {
         let csv = resource::load_bytes("valid_different_column_order.csv");
         let expected = vec![
-            new_lot("Taxable", "VOO", 27, 1, 100.47),
-            new_lot("IRA", "BND", 28, 2, 200.26),
-            new_lot("IRA", "BND", 29, 3, 300.23),
+            new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+            new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+            new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
         assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
@@ -128,9 +128,9 @@ mod test {
     fn test_valid_with_whitespace() {
         let csv = resource::load_bytes("valid_with_whitespace.csv");
         let expected = vec![
-            new_lot("Taxable", "VOO", 27, 1, 100.47),
-            new_lot("IRA", "BND", 28, 2, 200.26),
-            new_lot("IRA", "BND", 29, 3, 300.23),
+            new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+            new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+            new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
         assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
@@ -140,9 +140,9 @@ mod test {
     fn test_valid_with_capitalized_headers() {
         let csv = resource::load_bytes("valid_with_capitalized_headers.csv");
         let expected = vec![
-            new_lot("Taxable", "VOO", 27, 1, 100.47),
-            new_lot("IRA", "BND", 28, 2, 200.26),
-            new_lot("IRA", "BND", 29, 3, 300.23),
+            new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+            new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+            new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
         assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
@@ -185,10 +185,12 @@ mod test {
         );
     }
 
+    const DATE_FORMAT: &'static str = "%Y/%m/%d";
+
     fn new_lot(
         account: &str,
         symbol: &str,
-        day_of_month: u32,
+        date: &str,
         quantity: u32,
         cost_basis_usd: f64,
     ) -> Lot {
@@ -197,7 +199,7 @@ mod test {
             Uuid::new_v4(),
             account,
             symbol,
-            NaiveDate::from_ymd_opt(2023, 3, day_of_month).unwrap(),
+            NaiveDate::parse_from_str(date, DATE_FORMAT).unwrap(),
             Decimal::from(quantity),
             cost_basis,
         )

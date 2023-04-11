@@ -14,6 +14,8 @@ mod tests {
     use test_util::resource;
     use uuid::Uuid;
 
+    const DATE_FORMAT: &'static str = "%Y/%m/%d";
+
     pub fn load_bytes(resource: &str) -> Bytes {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resource/test/csv_digester/");
@@ -24,7 +26,7 @@ mod tests {
     pub fn new_lot(
         account: &str,
         symbol: &str,
-        day_of_month: u32,
+        date: &str,
         quantity: u32,
         cost_basis_usd: f64,
     ) -> Lot {
@@ -33,7 +35,7 @@ mod tests {
             Uuid::new_v4(),
             account,
             symbol,
-            NaiveDate::from_ymd_opt(2023, 3, day_of_month).unwrap(),
+            NaiveDate::parse_from_str(date, DATE_FORMAT).unwrap(),
             Decimal::from(quantity),
             cost_basis,
         )
@@ -73,9 +75,9 @@ mod tests {
         let req = test::TestRequest::get().uri("/lots").to_request();
         let resp: Vec<Lot> = test::call_and_read_body_json(&app, req).await;
         let expected = vec![
-            new_lot("Taxable", "VOO", 27, 1, 100.47),
-            new_lot("IRA", "BND", 28, 2, 200.26),
-            new_lot("IRA", "BND", 29, 3, 300.23),
+            new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+            new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+            new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         assert_vec_eq_fn(&expected, &resp, Lot::eq_ignore_id);
     }
