@@ -1,6 +1,6 @@
 use crate::csv_digester::csv_to_lot;
 use crate::model::Lot;
-use crate::service::limits::APP_LIMITS;
+use crate::service::limits::LIMITS;
 use crate::service::state::State;
 use actix_web::web::{Data, Json};
 use actix_web::{error, get, put, web, HttpRequest, HttpResponse, Responder};
@@ -36,12 +36,12 @@ pub async fn put_lots(csv: web::Bytes, req: HttpRequest, data: Data<State>) -> i
         };
     }
     let content_length = content_length.unwrap();
-    if content_length > APP_LIMITS.max_file_size {
+    if content_length > LIMITS.max_file_size {
         return HttpResponse::PayloadTooLarge();
     }
     match csv_to_lot(csv) {
         Ok(ref lots) => {
-            if lots.len() > APP_LIMITS.max_num_lots {
+            if lots.len() > LIMITS.max_num_lots {
                 return HttpResponse::PayloadTooLarge();
             }
             match data.dao.put_lots(lots).await {
