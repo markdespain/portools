@@ -14,7 +14,7 @@ async fn main() -> io::Result<()> {
     let client = Client::with_uri_str(uri).await.expect("failed to connect");
     mongo::create_indexes(&client).await;
 
-    let app_state = Data::new(State::new(Box::new(MongoDao { client })));
+    let app_state = Data::new(State::new(Box::new(MongoDao::new(client))));
     HttpServer::new(move || App::new().configure(|cfg| service::config(cfg, &app_state)))
         .bind(("0.0.0.0", 8080))?
         .run()

@@ -1,13 +1,13 @@
-use std::collections::HashMap;
 use crate::dao::Dao;
 use crate::model::Portfolio;
 use async_trait::async_trait;
 use mongodb::error::Error;
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 #[derive(Default)]
 pub struct InMemoryDao {
-    portfolios : Mutex<HashMap<u32, Portfolio>>
+    portfolios: Mutex<HashMap<u32, Portfolio>>,
 }
 
 #[async_trait]
@@ -18,7 +18,7 @@ impl Dao for InMemoryDao {
         Ok(())
     }
 
-    async fn get_portfolio(&self, id:u32) -> Result<Option<Portfolio>, Error> {
+    async fn get_portfolio(&self, id: u32) -> Result<Option<Portfolio>, Error> {
         let l = self.portfolios.lock().unwrap();
         Ok(l.get(&id).map(|p| p.to_owned()))
     }

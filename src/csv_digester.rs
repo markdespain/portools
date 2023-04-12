@@ -184,13 +184,7 @@ mod test {
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
-    fn new_lot(
-        account: &str,
-        symbol: &str,
-        date: &str,
-        quantity: u32,
-        cost_basis_usd: f64,
-    ) -> Lot {
+    fn new_lot(account: &str, symbol: &str, date: &str, quantity: u32, cost_basis_usd: f64) -> Lot {
         let cost_basis = Currency::new(cost_basis_usd.to_string().parse().unwrap(), "USD").unwrap();
         Lot::new(
             account,

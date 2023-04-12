@@ -9,5 +9,5 @@ pub mod mongo;
 pub trait Dao {
     async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error>;
 
-    async fn get_portfolio(&self, id : u32) -> Result<Option<Portfolio>, Error>;
+    async fn get_portfolio(&self, id: u32) -> Result<Option<Portfolio>, Error>;
 }

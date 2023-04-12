@@ -31,13 +31,12 @@ impl Currency {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Portfolio {
     pub id: u32,
-    pub lots : Vec<Lot>
+    pub lots: Vec<Lot>,
 }
 
 // a Lot is an amount of securities purchased on a particular date
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Lot {
-
     // name of the brokerage account within the lot is held
     account: String,
 
