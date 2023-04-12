@@ -41,6 +41,38 @@ mod tests {
         };
         assert_eq!(&expected, &resp);
     }
+
+    #[actix_web::test]
+    async fn test_portfolio_update_existing() {
+        let dao = util::init_dao().await;
+        let app = test::init_service(App::new().configure(move |cfg| {
+            test_config(cfg, dao);
+        }))
+        .await;
+
+        util::put_portfolio(1, "valid.csv", &app).await;
+        let resp = util::get_portfolio(&app).await;
+        let expected = Portfolio {
+            id: 1,
+            lots: vec![
+                util::new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+                util::new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+                util::new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
+            ],
+        };
+        assert_eq!(&expected, &resp);
+
+        util::put_portfolio(1, "valid_2.csv", &app).await;
+        let resp = util::get_portfolio(&app).await;
+        let expected = Portfolio {
+            id: 1,
+            lots: vec![
+                util::new_lot("Taxable", "VTEB", "2023/03/27", 5, 55.55),
+                util::new_lot("IRA", "VTI", "2023/03/28", 4, 222.22),
+            ],
+        };
+        assert_eq!(&expected, &resp);
+    }
 }
 
 mod util {
