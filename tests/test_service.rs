@@ -3,7 +3,6 @@ mod tests {
     use crate::util;
     use crate::util::test_config;
     use actix_web::{test, App};
-    use portools::model::Portfolio;
 
     #[actix_web::test]
     async fn test_portfolio_get_not_found() {
@@ -31,15 +30,7 @@ mod tests {
 
         util::put_portfolio(1, "valid.csv", &app).await;
         let resp = util::get_portfolio(1, &app).await;
-        let expected = Portfolio {
-            id: 1,
-            lots: vec![
-                util::new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
-                util::new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
-                util::new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
-            ],
-        };
-        assert_eq!(&expected, &resp);
+        assert_eq!(&util::expected_valid_portfolio(1), &resp);
     }
 
     #[actix_web::test]
@@ -52,26 +43,11 @@ mod tests {
 
         util::put_portfolio(1, "valid.csv", &app).await;
         let resp = util::get_portfolio(1, &app).await;
-        let expected = Portfolio {
-            id: 1,
-            lots: vec![
-                util::new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
-                util::new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
-                util::new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
-            ],
-        };
-        assert_eq!(&expected, &resp);
+        assert_eq!(&util::expected_valid_portfolio(1), &resp);
 
         util::put_portfolio(1, "valid_2.csv", &app).await;
         let resp = util::get_portfolio(1, &app).await;
-        let expected = Portfolio {
-            id: 1,
-            lots: vec![
-                util::new_lot("Taxable", "VTEB", "2023/03/27", 5, 55.55),
-                util::new_lot("IRA", "VTI", "2023/03/28", 4, 222.22),
-            ],
-        };
-        assert_eq!(&expected, &resp);
+        assert_eq!(&util::expected_valid_2_portfolio(1), &resp);
     }
 
     #[actix_web::test]
@@ -85,25 +61,10 @@ mod tests {
         util::put_portfolio(1, "valid.csv", &app).await;
         util::put_portfolio(2, "valid_2.csv", &app).await;
         let resp_1 = util::get_portfolio(1, &app).await;
-        let expected_1 = Portfolio {
-            id: 1,
-            lots: vec![
-                util::new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
-                util::new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
-                util::new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
-            ],
-        };
-        assert_eq!(&expected_1, &resp_1);
+        assert_eq!(&util::expected_valid_portfolio(1), &resp_1);
 
         let resp = util::get_portfolio(2, &app).await;
-        let expected = Portfolio {
-            id: 2,
-            lots: vec![
-                util::new_lot("Taxable", "VTEB", "2023/03/27", 5, 55.55),
-                util::new_lot("IRA", "VTI", "2023/03/28", 4, 222.22),
-            ],
-        };
-        assert_eq!(&expected, &resp);
+        assert_eq!(&util::expected_valid_2_portfolio(2), &resp);
     }
 }
 
@@ -173,6 +134,27 @@ mod util {
                 let dao: InMemoryDao = Default::default();
                 Box::new(dao)
             }
+        }
+    }
+
+    pub fn expected_valid_portfolio(id: u32) -> Portfolio {
+        Portfolio {
+            id,
+            lots: vec![
+                new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+                new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+                new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
+            ],
+        }
+    }
+
+    pub fn expected_valid_2_portfolio(id: u32) -> Portfolio {
+        Portfolio {
+            id,
+            lots: vec![
+                new_lot("Taxable", "VTEB", "2023/03/27", 5, 55.55),
+                new_lot("IRA", "VTI", "2023/03/28", 4, 222.22),
+            ],
         }
     }
 
