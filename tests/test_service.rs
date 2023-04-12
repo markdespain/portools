@@ -15,15 +15,7 @@ mod tests {
         }))
         .await;
 
-        // put the CSV
-        let csv = util::load_bytes("valid.csv");
-        let put_request = test::TestRequest::put()
-            .uri("/portfolio/1")
-            .append_header(("Content-Length", csv.len()))
-            .set_payload(csv)
-            .to_request();
-        let put_response = test::call_service(&app, put_request).await;
-        assert_eq!(200, put_response.status().as_u16());
+        util::put_portfolio(1, "valid.csv", &app).await;
 
         // assert the state
         let get_request = test::TestRequest::get().uri("/portfolio/2").to_request();
@@ -32,22 +24,14 @@ mod tests {
     }
 
     #[actix_web::test]
-    async fn test_portfolio_put_with_valid() {
+    async fn test_portfolio_put_with_valid_then_get() {
         let dao = util::init_dao().await;
         let app = test::init_service(App::new().configure(move |cfg| {
             test_config(cfg, dao);
         }))
         .await;
 
-        // put the CSV
-        let csv = util::load_bytes("valid.csv");
-        let put_request = test::TestRequest::put()
-            .uri("/portfolio/1")
-            .append_header(("Content-Length", csv.len()))
-            .set_payload(csv)
-            .to_request();
-        let put_response = test::call_service(&app, put_request).await;
-        assert_eq!(200, put_response.status().as_u16());
+        util::put_portfolio(1, "valid.csv", &app).await;
 
         // assert the state
         let req = test::TestRequest::get().uri("/portfolio/1").to_request();
@@ -67,6 +51,9 @@ mod tests {
 mod util {
     use std::env::VarError;
     use std::path::PathBuf;
+    use actix_http::Request;
+    use actix_web::dev::{Service, ServiceResponse};
+    use actix_web::test;
     use test_util::resource;
 
     use actix_web::web::{Bytes, Data, ServiceConfig};
@@ -82,6 +69,20 @@ mod util {
     use portools::service::state::{State, StateDao};
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
+
+    pub async fn put_portfolio<B, E>(id: u32, csv_file: &str, app: &(impl Service<Request, Response=ServiceResponse<B>, Error=E> + Sized))
+        where
+            E: std::fmt::Debug,
+    {
+        let csv = load_bytes(csv_file);
+        let put_request = test::TestRequest::put()
+            .uri(&format!("/portfolio/{id}"))
+            .append_header(("Content-Length", csv.len()))
+            .set_payload(csv)
+            .to_request();
+        let put_response = test::call_service(&app, put_request).await;
+        assert_eq!(200, put_response.status().as_u16());
+    }
 
     pub async fn init_dao() -> Box<StateDao> {
         match std::env::var("MONGODB_URI") {
@@ -109,7 +110,7 @@ mod util {
 
     pub fn load_bytes(resource: &str) -> Bytes {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        path.push("resource/test/csv_digester/");
+        path.push("resource/test/service/");
         path.push(resource);
         resource::load_bytes(path.to_str().unwrap())
     }
