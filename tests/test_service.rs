@@ -30,7 +30,7 @@ mod tests {
         .await;
 
         util::put_portfolio(1, "valid.csv", &app).await;
-        let resp = util::get_portfolio(&app).await;
+        let resp = util::get_portfolio(1, &app).await;
         let expected = Portfolio {
             id: 1,
             lots: vec![
@@ -51,7 +51,7 @@ mod tests {
         .await;
 
         util::put_portfolio(1, "valid.csv", &app).await;
-        let resp = util::get_portfolio(&app).await;
+        let resp = util::get_portfolio(1, &app).await;
         let expected = Portfolio {
             id: 1,
             lots: vec![
@@ -63,9 +63,41 @@ mod tests {
         assert_eq!(&expected, &resp);
 
         util::put_portfolio(1, "valid_2.csv", &app).await;
-        let resp = util::get_portfolio(&app).await;
+        let resp = util::get_portfolio(1, &app).await;
         let expected = Portfolio {
             id: 1,
+            lots: vec![
+                util::new_lot("Taxable", "VTEB", "2023/03/27", 5, 55.55),
+                util::new_lot("IRA", "VTI", "2023/03/28", 4, 222.22),
+            ],
+        };
+        assert_eq!(&expected, &resp);
+    }
+
+    #[actix_web::test]
+    async fn test_portfolio_put_multiple() {
+        let dao = util::init_dao().await;
+        let app = test::init_service(App::new().configure(move |cfg| {
+            test_config(cfg, dao);
+        }))
+        .await;
+
+        util::put_portfolio(1, "valid.csv", &app).await;
+        util::put_portfolio(2, "valid_2.csv", &app).await;
+        let resp_1 = util::get_portfolio(1, &app).await;
+        let expected_1 = Portfolio {
+            id: 1,
+            lots: vec![
+                util::new_lot("Taxable", "VOO", "2023/03/27", 1, 100.47),
+                util::new_lot("IRA", "BND", "2023/03/28", 2, 200.26),
+                util::new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
+            ],
+        };
+        assert_eq!(&expected_1, &resp_1);
+
+        let resp = util::get_portfolio(2, &app).await;
+        let expected = Portfolio {
+            id: 2,
             lots: vec![
                 util::new_lot("Taxable", "VTEB", "2023/03/27", 5, 55.55),
                 util::new_lot("IRA", "VTI", "2023/03/28", 4, 222.22),
@@ -114,10 +146,13 @@ mod util {
     }
 
     pub async fn get_portfolio(
+        id: u32,
         app: &(impl Service<Request, Response = ServiceResponse, Error = actix_web::error::Error>
               + Sized),
     ) -> Portfolio {
-        let req = test::TestRequest::get().uri("/portfolio/1").to_request();
+        let req = test::TestRequest::get()
+            .uri(&format!("/portfolio/{id}"))
+            .to_request();
         let resp: Portfolio = test::call_and_read_body_json(&app, req).await;
         resp
     }
