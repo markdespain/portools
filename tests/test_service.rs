@@ -44,7 +44,6 @@ mod tests {
 }
 
 mod util {
-    use actix_http::body::MessageBody;
     use actix_http::Request;
     use actix_web::dev::{Service, ServiceResponse};
     use actix_web::test;
@@ -66,14 +65,12 @@ mod util {
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
-    pub async fn put_portfolio<B>(
+    pub async fn put_portfolio(
         id: u32,
         csv_file: &str,
-        app: &(impl Service<Request, Response = ServiceResponse<B>, Error = actix_web::error::Error>
+        app: &(impl Service<Request, Response = ServiceResponse, Error = actix_web::error::Error>
               + Sized),
-    ) where
-        B: MessageBody,
-    {
+    ) {
         let csv = load_bytes(csv_file);
         let put_request = test::TestRequest::put()
             .uri(&format!("/portfolio/{id}"))
@@ -84,13 +81,10 @@ mod util {
         assert_eq!(200, put_response.status().as_u16());
     }
 
-    pub async fn get_portfolio<B>(
-        app: &(impl Service<Request, Response = ServiceResponse<B>, Error = actix_web::error::Error>
+    pub async fn get_portfolio(
+        app: &(impl Service<Request, Response = ServiceResponse, Error = actix_web::error::Error>
               + Sized),
-    ) -> Portfolio
-    where
-        B: MessageBody,
-    {
+    ) -> Portfolio {
         let req = test::TestRequest::get().uri("/portfolio/1").to_request();
         let resp: Portfolio = test::call_and_read_body_json(&app, req).await;
         resp
