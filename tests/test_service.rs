@@ -1,11 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use actix_web::{test, App};
-
-    use portools::model::Portfolio;
-
     use crate::util;
     use crate::util::test_config;
+    use actix_web::{test, App};
+    use portools::model::Portfolio;
 
     #[actix_web::test]
     async fn test_portfolio_get_not_found() {
@@ -32,10 +30,7 @@ mod tests {
         .await;
 
         util::put_portfolio(1, "valid.csv", &app).await;
-
-        // assert the state
-        let req = test::TestRequest::get().uri("/portfolio/1").to_request();
-        let resp: Portfolio = test::call_and_read_body_json(&app, req).await;
+        let resp = util::get_portfolio(&app).await;
         let expected = Portfolio {
             id: 1,
             lots: vec![
@@ -49,30 +44,34 @@ mod tests {
 }
 
 mod util {
-    use std::env::VarError;
-    use std::path::PathBuf;
+    use actix_http::body::MessageBody;
     use actix_http::Request;
     use actix_web::dev::{Service, ServiceResponse};
     use actix_web::test;
+    use std::env::VarError;
+    use std::path::PathBuf;
     use test_util::resource;
 
     use actix_web::web::{Bytes, Data, ServiceConfig};
     use chrono::NaiveDate;
     use mongodb::Client;
-    use rust_decimal::Decimal;
     use portools::dao::local::InMemoryDao;
+    use rust_decimal::Decimal;
 
     use portools::dao::mongo;
     use portools::dao::mongo::MongoDao;
-    use portools::model::{Currency, Lot};
+    use portools::model::{Currency, Lot, Portfolio};
     use portools::service;
     use portools::service::state::{State, StateDao};
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
-    pub async fn put_portfolio<B, E>(id: u32, csv_file: &str, app: &(impl Service<Request, Response=ServiceResponse<B>, Error=E> + Sized))
-        where
-            E: std::fmt::Debug,
+    pub async fn put_portfolio<B, E>(
+        id: u32,
+        csv_file: &str,
+        app: &(impl Service<Request, Response = ServiceResponse<B>, Error = E> + Sized),
+    ) where
+        E: std::fmt::Debug,
     {
         let csv = load_bytes(csv_file);
         let put_request = test::TestRequest::put()
@@ -82,6 +81,18 @@ mod util {
             .to_request();
         let put_response = test::call_service(&app, put_request).await;
         assert_eq!(200, put_response.status().as_u16());
+    }
+
+    pub async fn get_portfolio<B>(
+        app: &(impl Service<Request, Response = ServiceResponse<B>, Error = actix_web::error::Error>
+              + Sized),
+    ) -> Portfolio
+    where
+        B: MessageBody,
+    {
+        let req = test::TestRequest::get().uri("/portfolio/1").to_request();
+        let resp: Portfolio = test::call_and_read_body_json(&app, req).await;
+        resp
     }
 
     pub async fn init_dao() -> Box<StateDao> {
@@ -97,7 +108,7 @@ mod util {
             }
             Err(VarError::NotPresent) => {
                 println!("using in-memory DAO");
-                let dao : InMemoryDao = Default::default();
+                let dao: InMemoryDao = Default::default();
                 Box::new(dao)
             }
         }
