@@ -12,7 +12,7 @@ async fn main() -> io::Result<()> {
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
 
     let client = Client::with_uri_str(uri).await.expect("failed to connect");
-    mongo::create_indexes(&client).await;
+    mongo::create_collections_and_indexes(&client).await;
 
     let app_state = Data::new(State::new(Box::new(MongoDao::new(client))));
     HttpServer::new(move || App::new().configure(|cfg| service::config(cfg, &app_state)))

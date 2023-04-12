@@ -123,7 +123,7 @@ mod util {
             Ok(uri) => {
                 println!("using Mongo DAO with URI {uri}");
                 let client = Client::with_uri_str(uri).await.expect("failed to connect");
-                mongo::create_indexes(&client).await;
+                mongo::drop_and_create_collections_and_indexes(&client).await;
                 Box::new(MongoDao::new(client))
             }
             Err(VarError::NotUnicode(_)) => {

@@ -49,20 +49,39 @@ impl Dao for MongoDao {
     }
 }
 
-pub async fn create_indexes(client: &Client) {
-    create_index::<Portfolio>(client, COLL_PORTFOLIO).await;
+pub async fn drop_and_create_collections_and_indexes(client: &Client) {
+    drop_and_create_collection_and_index::<Portfolio>(client, COLL_PORTFOLIO).await;
 }
 
-async fn create_index<T>(client: &Client, collection: &str) {
+pub async fn create_collections_and_indexes(client: &Client) {
+    create_collection_and_index::<Portfolio>(client, COLL_PORTFOLIO).await;
+}
+
+async fn create_collection_and_index<T>(client: &Client, collection: &str) {
+    let db = client.database(DB_NAME);
+
+    db.create_collection(collection, None)
+        .await
+        .expect("creating a collection should succeed");
+
     let options = IndexOptions::builder().unique(true).build();
     let model = IndexModel::builder()
         .keys(doc! { "id": 1 })
         .options(options)
         .build();
-    client
-        .database(DB_NAME)
-        .collection::<T>(collection)
+    db.collection::<T>(collection)
         .create_index(model, None)
         .await
         .expect("creating an index should succeed");
+}
+
+async fn drop_and_create_collection_and_index<T>(client: &Client, collection_name: &str) {
+    client
+        .database(DB_NAME)
+        .collection::<T>(collection_name)
+        .drop(None)
+        .await
+        .expect("dropping the collection should succeed");
+
+    create_collection_and_index::<T>(client, collection_name).await;
 }
