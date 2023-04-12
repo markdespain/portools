@@ -87,7 +87,7 @@ fn get_field<'a>(
 
 #[cfg(test)]
 mod test {
-    use crate::csv_digester::{csv_to_lot, CsvError};
+    use crate::digest::{csv_to_lot, CsvError};
     use crate::model::{Currency, Lot};
     use crate::unit_test_util::resource;
     use crate::validate::Invalid;

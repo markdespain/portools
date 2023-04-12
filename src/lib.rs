@@ -1,4 +1,4 @@
-mod csv_digester;
+mod digest;
 pub mod dao;
 pub mod model;
 pub mod service;
