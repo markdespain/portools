@@ -3,7 +3,6 @@ use crate::validate::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
 use std::collections::HashMap;
-use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub enum CsvError {
@@ -58,7 +57,6 @@ fn to_lot(
     record: &StringRecord,
 ) -> Result<Lot, CsvError> {
     Lot::from_str(
-        Uuid::new_v4(),
         get_field(row, "account", field_to_index, record)?,
         get_field(row, "symbol", field_to_index, record)?,
         get_field(row, "date_acquired", field_to_index, record)?,
@@ -97,8 +95,7 @@ mod test {
     use chrono::NaiveDate;
     use rust_decimal::Decimal;
     use rusty_money::MoneyError::InvalidAmount;
-    use test_util::assertion::{assert_err_eq, assert_result_vec_eq_fn};
-    use uuid::Uuid;
+    use test_util::assertion::assert_err_eq;
 
     #[test]
     fn test_valid() {
@@ -109,7 +106,7 @@ mod test {
             new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
+        assert_eq!(expected, result.unwrap());
     }
 
     #[test]
@@ -121,7 +118,7 @@ mod test {
             new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
+        assert_eq!(expected, result.unwrap());
     }
 
     #[test]
@@ -133,7 +130,7 @@ mod test {
             new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
+        assert_eq!(expected, result.unwrap());
     }
 
     #[test]
@@ -145,7 +142,7 @@ mod test {
             new_lot("IRA", "BND", "2023/03/29", 3, 300.23),
         ];
         let result = csv_to_lot(Bytes::from(csv));
-        assert_result_vec_eq_fn(&expected, &result, Lot::eq_ignore_id);
+        assert_eq!(expected, result.unwrap());
     }
 
     #[test]
@@ -196,7 +193,6 @@ mod test {
     ) -> Lot {
         let cost_basis = Currency::new(cost_basis_usd.to_string().parse().unwrap(), "USD").unwrap();
         Lot::new(
-            Uuid::new_v4(),
             account,
             symbol,
             NaiveDate::parse_from_str(date, DATE_FORMAT).unwrap(),

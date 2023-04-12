@@ -3,7 +3,6 @@ use chrono::naive::NaiveDate;
 use rust_decimal::Decimal;
 use rusty_money::{iso, FormattableCurrency, Money};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Currency {
@@ -29,11 +28,15 @@ impl Currency {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Portfolio {
+    pub id: u32,
+    pub lots : Vec<Lot>
+}
+
 // a Lot is an amount of securities purchased on a particular date
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Lot {
-    // unique id for this Lot
-    id: Uuid,
 
     // name of the brokerage account within the lot is held
     account: String,
@@ -62,7 +65,6 @@ impl Lot {
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
     pub fn from_str(
-        id: Uuid,
         account: &str,
         symbol: &str,
         date: &str,
@@ -80,11 +82,10 @@ impl Lot {
             .map_err(|error| Invalid::parse_money_error("cost_basis", error))?;
         let cost_basis = Currency::new(*cost_basis.amount(), cost_basis.currency().code())?;
 
-        Lot::new(id, account, symbol, date, quantity, cost_basis)
+        Lot::new(account, symbol, date, quantity, cost_basis)
     }
 
     pub fn new(
-        id: Uuid,
         account: &str,
         symbol: &str,
         date_acquired: NaiveDate,
@@ -102,7 +103,6 @@ impl Lot {
         validate_positive("quantity", &quantity)?;
         validate_positive("cost_basis", &cost_basis.amount)?;
         Ok(Lot {
-            id,
             account,
             symbol,
             date_acquired,
@@ -114,12 +114,6 @@ impl Lot {
     #[cfg(test)]
     fn date_acquired_string(&self) -> String {
         format!("{}", self.date_acquired.format(Lot::DATE_FORMAT))
-    }
-
-    pub fn eq_ignore_id(&self, other: &Lot) -> bool {
-        let mut other = other.clone();
-        other.id = self.id;
-        *self == other
     }
 }
 
@@ -144,7 +138,6 @@ mod tests {
 
     fn new_from_spec(lot: Lot) -> Result<Lot, Invalid> {
         Lot::new(
-            lot.id,
             &lot.account,
             &lot.symbol,
             lot.date_acquired,
@@ -255,7 +248,6 @@ mod tests {
     fn lot_from_str_valid() {
         let expected = fixture::lot();
         let lot = Lot::from_str(
-            expected.id,
             &expected.account,
             &expected.symbol,
             &expected.date_acquired_string(),
@@ -270,7 +262,6 @@ mod tests {
         let fixture = fixture::lot();
         let date_acquired = format!("{}", fixture.date_acquired.format("%Y-%m-%d"));
         let lot = Lot::from_str(
-            fixture.id,
             &fixture.account,
             &fixture.symbol,
             &date_acquired,
@@ -285,7 +276,6 @@ mod tests {
         let fixture = fixture::lot();
         let quantity = "not a number";
         let lot = Lot::from_str(
-            fixture.id,
             &fixture.account,
             &fixture.symbol,
             &fixture.date_acquired_string(),
@@ -300,7 +290,6 @@ mod tests {
         let fixture = fixture::lot();
         let cost_basis = "not a number";
         let lot = Lot::from_str(
-            fixture.id,
             &fixture.account,
             &fixture.symbol,
             &fixture.date_acquired_string(),

@@ -29,12 +29,12 @@ cargo run
 
 ## Upload a CSV containing Lots
 ```
-curl -v -X PUT --data-binary @resource/example.csv http://localhost:8080/lots
+curl -v -X PUT --data-binary @resource/example.csv http://localhost:8080/portfolio/1
 ```
 
 ## Get Lots
 ```
-curl -v http://localhost:8080/lots 
+curl -v http://localhost:8080/portfolio/1 
 ```
 
 

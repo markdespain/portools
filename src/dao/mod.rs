@@ -1,4 +1,4 @@
-use crate::model::Lot;
+use crate::model::Portfolio;
 use async_trait::async_trait;
 use mongodb::error::Error;
 
@@ -7,7 +7,7 @@ pub mod mongo;
 
 #[async_trait]
 pub trait Dao {
-    async fn put_lots(&self, lots: &[Lot]) -> Result<(), Error>;
+    async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error>;
 
-    async fn get_lots(&self) -> Result<Vec<Lot>, Error>;
+    async fn get_portfolio(&self, id : u32) -> Result<Option<Portfolio>, Error>;
 }
