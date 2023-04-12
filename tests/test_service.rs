@@ -66,12 +66,13 @@ mod util {
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
-    pub async fn put_portfolio<B, E>(
+    pub async fn put_portfolio<B>(
         id: u32,
         csv_file: &str,
-        app: &(impl Service<Request, Response = ServiceResponse<B>, Error = E> + Sized),
+        app: &(impl Service<Request, Response = ServiceResponse<B>, Error = actix_web::error::Error>
+              + Sized),
     ) where
-        E: std::fmt::Debug,
+        B: MessageBody,
     {
         let csv = load_bytes(csv_file);
         let put_request = test::TestRequest::put()
