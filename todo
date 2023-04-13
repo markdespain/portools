@@ -1,4 +1,3 @@
-mongo.rs:: put_lots should have upsert semantics instead of insert semantics
 mongo.rs:: create_lots_index() should return an error instead of calling expect (panicking)
 mongo.rs:: see if data types of some inserted fields can be changed to be numeric
 mongo.rs:: don't create the index on application startup
