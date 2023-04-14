@@ -82,8 +82,8 @@ mod util {
     use portools::dao::local::InMemoryDao;
     use rust_decimal::Decimal;
 
-    use portools::dao::{Dao, mongo};
     use portools::dao::mongo::MongoDao;
+    use portools::dao::{mongo, Dao};
     use portools::model::{Currency, Lot, Portfolio};
     use portools::service;
     use portools::service::state::State;
@@ -121,9 +121,13 @@ mod util {
     pub async fn init_dao() -> Box<dyn Dao> {
         match std::env::var("MONGODB_URI") {
             Ok(uri) => {
-                println!("using Mongo DAO with URI {uri}");
-                let client = Client::with_uri_str(uri).await.expect("failed to connect");
-                mongo::drop_and_create_collections_and_indexes(&client).await;
+                println!("using Mongo DAO with URI {}", uri.clone());
+                let client = Client::with_uri_str(&uri)
+                    .await
+                    .expect(&format!("should be able to connect"));
+                mongo::drop_and_create_collections_and_indexes(&client)
+                    .await
+                    .expect("should be able to re-create collections and indexes");
                 Box::new(MongoDao::new(client))
             }
             Err(VarError::NotUnicode(_)) => {

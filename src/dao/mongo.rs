@@ -29,7 +29,6 @@ impl Dao for MongoDao {
             .build();
         let collection: Collection<Portfolio> =
             self.client.database(DB_NAME).collection(COLL_PORTFOLIO);
-        // should be an upsert
         match collection
             .find_one_and_replace(filter, portfolio, options)
             .await
@@ -49,39 +48,75 @@ impl Dao for MongoDao {
     }
 }
 
-pub async fn drop_and_create_collections_and_indexes(client: &Client) {
-    drop_and_create_collection_and_index::<Portfolio>(client, COLL_PORTFOLIO).await;
+pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<(), Error> {
+    drop_and_create_collection_and_index::<Portfolio>(client, COLL_PORTFOLIO).await
 }
 
-pub async fn create_collections_and_indexes(client: &Client) {
-    create_collection_and_index::<Portfolio>(client, COLL_PORTFOLIO).await;
+pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error> {
+    create_collection_and_index_if_not_exist::<Portfolio>(client, COLL_PORTFOLIO).await
 }
 
-async fn create_collection_and_index<T>(client: &Client, collection: &str) {
+async fn create_collection_and_index_if_not_exist<T>(
+    client: &Client,
+    collection_name: &str,
+) -> Result<(), Error> {
+    create_collection_if_not_exists::<T>(client, collection_name).await?;
+    let index_name = format!("{}_index", collection_name);
+    create_index_if_not_exists::<T>(client, collection_name, &index_name).await
+}
+
+async fn create_index_if_not_exists<T>(
+    client: &Client,
+    collection_name: &str,
+    index_name: &str,
+) -> Result<(), Error> {
     let db = client.database(DB_NAME);
+    let collection = db.collection::<T>(collection_name);
 
-    db.create_collection(collection, None)
-        .await
-        .expect("creating a collection should succeed");
-
-    let options = IndexOptions::builder().unique(true).build();
-    let model = IndexModel::builder()
-        .keys(doc! { "id": 1 })
-        .options(options)
-        .build();
-    db.collection::<T>(collection)
-        .create_index(model, None)
-        .await
-        .expect("creating an index should succeed");
+    let index_names = collection.list_index_names().await?;
+    if index_names.contains(&index_name.to_string()) {
+        println!("index exists: {}", index_name.to_string());
+        Ok(())
+    } else {
+        println!("creating index: {}", index_name.to_string());
+        let model = IndexModel::builder()
+            .keys(doc! { "id": 1 })
+            .options(
+                IndexOptions::builder()
+                    .unique(true)
+                    .name(Some(index_name.to_string()))
+                    .build(),
+            )
+            .build();
+        collection.create_index(model, None).await?;
+        Ok(())
+    }
 }
 
-async fn drop_and_create_collection_and_index<T>(client: &Client, collection_name: &str) {
+async fn create_collection_if_not_exists<T>(
+    client: &Client,
+    collection_name: &str,
+) -> Result<(), Error> {
+    let db = client.database(DB_NAME);
+    let names = db.list_collection_names(None).await?;
+    if !names.contains(&collection_name.to_string()) {
+        println!("creating collection: {}", collection_name.clone());
+        db.create_collection(collection_name, None).await
+    } else {
+        println!("collection exists: {}", collection_name);
+        Ok(())
+    }
+}
+
+async fn drop_and_create_collection_and_index<T>(
+    client: &Client,
+    collection_name: &str,
+) -> Result<(), Error> {
     client
         .database(DB_NAME)
         .collection::<T>(collection_name)
         .drop(None)
-        .await
-        .expect("dropping the collection should succeed");
+        .await?;
 
-    create_collection_and_index::<T>(client, collection_name).await;
+    create_collection_and_index_if_not_exist::<T>(client, collection_name).await
 }

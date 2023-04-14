@@ -11,8 +11,12 @@ use portools::service::state::State;
 async fn main() -> io::Result<()> {
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
 
-    let client = Client::with_uri_str(uri).await.expect("failed to connect");
-    mongo::create_collections_and_indexes(&client).await;
+    let client = Client::with_uri_str(&uri)
+        .await
+        .expect(&format!("should be able to connect to {}", uri));
+    mongo::create_collections_and_indexes(&client)
+        .await
+        .expect("should be able create collections and indexes");
 
     let app_state = Data::new(State::new(Box::new(MongoDao::new(client))));
     HttpServer::new(move || App::new().configure(|cfg| service::config(cfg, &app_state)))
