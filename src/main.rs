@@ -13,7 +13,7 @@ async fn main() -> io::Result<()> {
 
     let client = Client::with_uri_str(&uri)
         .await
-        .expect(&format!("should be able to connect to {}", uri));
+        .unwrap_or_else(|_| panic!("should be able to connect to {}", uri));
     mongo::create_collections_and_indexes(&client)
         .await
         .expect("should be able create collections and indexes");

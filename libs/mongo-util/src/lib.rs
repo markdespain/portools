@@ -24,10 +24,10 @@ pub async fn create_index_if_not_exists<T>(
 
     let index_names = collection.list_index_names().await?;
     if index_names.contains(&index_name.to_string()) {
-        println!("index exists: {}", index_name.to_string());
+        println!("index exists: {}", index_name);
         Ok(())
     } else {
-        println!("creating index: {}", index_name.to_string());
+        println!("creating index: {}", index_name);
         let model = IndexModel::builder()
             .keys(doc! { "id": 1 })
             .options(
@@ -45,15 +45,15 @@ pub async fn create_index_if_not_exists<T>(
 async fn create_collection_if_not_exists<T>(
     client: &Client,
     database: &str,
-    collection_name: &str,
+    collection: &str,
 ) -> Result<(), Error> {
     let db = client.database(database);
     let names = db.list_collection_names(None).await?;
-    if !names.contains(&collection_name.to_string()) {
-        println!("creating collection {}", collection_name.clone());
-        db.create_collection(collection_name, None).await
+    if !names.contains(&collection.to_string()) {
+        println!("creating collection {}", collection);
+        db.create_collection(collection, None).await
     } else {
-        println!("collection exists: {}", collection_name);
+        println!("collection exists: {}", collection);
         Ok(())
     }
 }

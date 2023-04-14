@@ -124,7 +124,7 @@ mod util {
                 println!("using Mongo DAO with URI {}", uri.clone());
                 let client = Client::with_uri_str(&uri)
                     .await
-                    .expect(&format!("should be able to connect"));
+                    .expect("should be able to connect");
                 mongo::drop_and_create_collections_and_indexes(&client)
                     .await
                     .expect("should be able to re-create collections and indexes");

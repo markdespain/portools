@@ -3,7 +3,7 @@ use crate::model::Portfolio;
 use async_trait::async_trait;
 use mongodb::bson::doc;
 use mongodb::error::Error;
-use mongodb::options::{FindOneAndReplaceOptions};
+use mongodb::options::FindOneAndReplaceOptions;
 use mongodb::{Client, Collection};
 
 const DB_NAME: &str = "portools";
