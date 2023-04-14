@@ -1,13 +1,11 @@
 use crate::dao::Dao;
 
-pub type StateDao = dyn Dao + Send + Sync;
-
 pub struct State {
-    pub dao: Box<StateDao>,
+    pub dao: Box<dyn Dao>,
 }
 
 impl State {
-    pub fn new(dao: Box<StateDao>) -> State {
+    pub fn new(dao: Box<dyn Dao>) -> State {
         State { dao }
     }
 }

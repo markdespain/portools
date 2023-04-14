@@ -1,8 +1,9 @@
 mongo.rs:: create_lots_index() should return an error instead of calling expect (panicking)
+
 mongo.rs:: see if data types of some inserted fields can be changed to be numeric
 mongo.rs:: don't create the index on application startup
 
-main.rs:: allow Mongo URI to be configurable; make sure that cargo at Docker workflows work
+main.rs:: allow Mongo URI to be configurable; make sure that cargo and Docker workflows work
 
 csv_digester.rs: apply reasonable, configurable limits to the Lot values
 // e.g. date shouldn't be in the ancient past
@@ -10,7 +11,6 @@ csv_digester.rs: apply reasonable, configurable limits to the Lot values
 //      cost_basis shouldn't be absurdly high
 //      (quantity * cost_basis) shouldn't be absurdly high
 //      total portfolio value shouldn't be absurdly high
-
 main.rs: allow AppLimits to be configurable
 
 container: get k8s (preferred) or Docker Compose workflow going

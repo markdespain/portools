@@ -82,11 +82,11 @@ mod util {
     use portools::dao::local::InMemoryDao;
     use rust_decimal::Decimal;
 
-    use portools::dao::mongo;
+    use portools::dao::{Dao, mongo};
     use portools::dao::mongo::MongoDao;
     use portools::model::{Currency, Lot, Portfolio};
     use portools::service;
-    use portools::service::state::{State, StateDao};
+    use portools::service::state::State;
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 
@@ -118,7 +118,7 @@ mod util {
         resp
     }
 
-    pub async fn init_dao() -> Box<StateDao> {
+    pub async fn init_dao() -> Box<dyn Dao> {
         match std::env::var("MONGODB_URI") {
             Ok(uri) => {
                 println!("using Mongo DAO with URI {uri}");
@@ -158,7 +158,7 @@ mod util {
         }
     }
 
-    pub fn test_config(cfg: &mut ServiceConfig, dao: Box<StateDao>) {
+    pub fn test_config(cfg: &mut ServiceConfig, dao: Box<dyn Dao>) {
         let app_state = Data::new(State::new(dao));
         service::config(cfg, &app_state);
     }
