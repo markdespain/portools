@@ -18,6 +18,7 @@ chrono = { version = "0.4.24", features = ["serde"] }
 csv = "1.2.1"
 futures-util = "0.3.27"
 mongodb = "2.4.0"
+mongo-util = { path = "libs/mongo-util" }
 rust_decimal = {version="1.29.1", features = ["serde"] }
 rusty-money = { version ="0.4.1", features = ["iso"] }
 serde = { version = "1.0.158", features = ["derive"] }
