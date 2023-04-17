@@ -67,12 +67,12 @@ pub async fn put_portfolio(
         };
     }
     let content_length = content_length.unwrap();
-    if content_length > data.limits.max_file_size {
+    if content_length > data.limits.portfolio.max_file_size {
         return HttpResponse::PayloadTooLarge();
     }
     match csv_to_lot(csv) {
         Ok(lots) => {
-            if lots.len() > data.limits.max_num_lots {
+            if lots.len() > data.limits.portfolio.max_num_lots {
                 return HttpResponse::PayloadTooLarge();
             }
             let portfolio = Portfolio {
