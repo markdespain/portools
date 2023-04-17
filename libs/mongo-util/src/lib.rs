@@ -34,7 +34,7 @@ pub async fn create_index_if_not_exists<T>(
             .options(
                 IndexOptions::builder()
                     .unique(true)
-                    .name(Some(index_name.to_string()))
+                    .name(Some(index_name.into()))
                     .build(),
             )
             .build();

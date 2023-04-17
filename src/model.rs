@@ -310,7 +310,7 @@ mod tests {
             ..fixture::lot()
         };
         let expected_error = Invalid {
-            field: "quantity".to_string(),
+            field: "quantity".into(),
             reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
@@ -323,7 +323,7 @@ mod tests {
             ..fixture::lot()
         };
         let expected_error = Invalid {
-            field: "cost_basis".to_string(),
+            field: "cost_basis".into(),
             reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
@@ -336,7 +336,7 @@ mod tests {
             ..fixture::lot()
         };
         let expected_error = Invalid {
-            field: "cost_basis".to_string(),
+            field: "cost_basis".into(),
             reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
@@ -349,7 +349,7 @@ mod tests {
             ..fixture::lot()
         };
         let expected_error = Invalid {
-            field: "quantity".to_string(),
+            field: "quantity".into(),
             reason: Reason::MustBePositive,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
@@ -384,7 +384,7 @@ mod tests {
             ..fixture::lot()
         };
         let expected_error = Invalid {
-            field: "account".to_string(),
+            field: "account".into(),
             reason: Reason::MustHaveLongerLen,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);
@@ -398,7 +398,7 @@ mod tests {
         };
 
         let expected_error = Invalid {
-            field: "account".to_string(),
+            field: "account".into(),
             reason: Reason::MustHaveShorterLen,
         };
         assert_new_from_spec_is_err(lot_spec, expected_error);

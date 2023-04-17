@@ -17,26 +17,26 @@ impl Invalid {
     }
 
     pub fn required_str(field: &str) -> Invalid {
-        Invalid::required(field.to_string())
+        Invalid::required(field.into())
     }
 
     pub fn parse_decimal_error(field: &str, cause: rust_decimal::Error) -> Invalid {
         Invalid {
-            field: field.to_string(),
+            field: field.into(),
             reason: Reason::ParseDecimalError { cause },
         }
     }
 
     pub fn parse_money_error(field: &str, cause: MoneyError) -> Invalid {
         Invalid {
-            field: field.to_string(),
+            field: field.into(),
             reason: Reason::ParseMoneyError { cause },
         }
     }
 
     pub fn parse_date_error(field: &str, cause: ParseError) -> Invalid {
         Invalid {
-            field: field.to_string(),
+            field: field.into(),
             reason: Reason::ParseDateError { cause },
         }
     }
@@ -56,7 +56,7 @@ pub enum Reason {
 pub fn validate_positive(field: &str, value: &Decimal) -> Result<(), Invalid> {
     if value.is_sign_negative() || value.is_zero() {
         return Err(Invalid {
-            field: field.to_string(),
+            field: field.into(),
             reason: Reason::MustBePositive,
         });
     }
@@ -73,15 +73,15 @@ pub fn trim_and_validate_len(
     let len = value.len();
     if len < min_len {
         return Err(Invalid {
-            field: field.to_string(),
+            field: field.into(),
             reason: Reason::MustHaveLongerLen,
         });
     }
     if len > max_len {
         return Err(Invalid {
-            field: field.to_string(),
+            field: field.into(),
             reason: Reason::MustHaveShorterLen,
         });
     }
-    Ok(value.to_string())
+    Ok(value.into())
 }

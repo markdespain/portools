@@ -45,7 +45,7 @@ fn create_headers_to_index(
         cause: error.to_string(),
     })?;
     for (i, header) in headers.iter().enumerate() {
-        let header = header.trim().to_ascii_lowercase().to_string();
+        let header = header.trim().to_ascii_lowercase().into();
         field_to_index.insert(header, i);
     }
     Ok(field_to_index)
@@ -73,7 +73,7 @@ fn get_field<'a>(
     record: &'a StringRecord,
 ) -> Result<&'a str, CsvError> {
     let index = name_to_index.get(name).ok_or(CsvError::MissingHeader {
-        name: name.to_string(),
+        name: name.into(),
     })?;
     let field_value = record
         .get(*index)
@@ -151,7 +151,7 @@ mod test {
         let result = csv_to_lot(Bytes::from(csv));
         assert_err_eq(
             CsvError::MissingHeader {
-                name: "account".to_string(),
+                name: "account".into(),
             },
             result,
         );
@@ -163,7 +163,7 @@ mod test {
         let result = csv_to_lot(Bytes::from(csv));
         assert_err_eq(
             CsvError::MissingHeader {
-                name: "quantity".to_string(),
+                name: "quantity".into(),
             },
             result,
         );

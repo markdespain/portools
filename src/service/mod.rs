@@ -10,7 +10,6 @@ use tracing::Instrument;
 use uuid::Uuid;
 use ContentLengthHeaderError::Missing;
 
-pub(crate) mod limits;
 pub mod state;
 pub(crate) mod util;
 
