@@ -73,31 +73,31 @@ pub async fn put_portfolio(
     if content_length > data.limits.portfolio.max_file_size {
         return HttpResponse::PayloadTooLarge();
     }
-    match csv_to_lot(csv) {
-        Ok(lots) => {
-            if lots.len() > data.limits.portfolio.max_num_lots {
-                return HttpResponse::PayloadTooLarge();
-            }
-            let portfolio = Portfolio {
-                id: portfolio_id,
-                lots,
-            };
-            match data
-                .dao
-                .put_portfolio(&portfolio)
-                .instrument(tracing::debug_span!("dao.put_portfolio"))
-                .await
-            {
-                Ok(_) => HttpResponse::Ok(),
-                Err(e) => {
-                    tracing::error!("get_lots error: {e}");
-                    HttpResponse::InternalServerError()
-                }
-            }
-        }
+    let lots = match csv_to_lot(csv) {
+        Ok(csv_lots) => csv_lots,
         Err(e) => {
             tracing::debug!("Invalid upload: {:?}", e);
-            HttpResponse::BadRequest()
+            return HttpResponse::BadRequest()
+        }
+    };
+    if lots.len() > data.limits.portfolio.max_num_lots {
+        return HttpResponse::PayloadTooLarge();
+    }
+    let portfolio = Portfolio {
+        id: portfolio_id,
+        lots,
+    };
+    match data
+        .dao
+        .put_portfolio(&portfolio)
+        .instrument(tracing::debug_span!("dao.put_portfolio"))
+        .await
+    {
+        Ok(_) => HttpResponse::Ok(),
+        Err(e) => {
+            tracing::error!("get_lots error: {e}");
+            HttpResponse::InternalServerError()
         }
     }
+
 }
