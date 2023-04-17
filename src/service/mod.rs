@@ -53,7 +53,7 @@ pub async fn put_portfolio(
 ) -> impl Responder {
     let request_id = Uuid::new_v4();
     let portfolio_id = path.into_inner();
-    let span = tracing::info_span!("put_portfolio", %request_id, %portfolio_id);
+    let span = tracing::info_span!("put_portfolio", %request_id, portfolio_id);
     let _guard = span.enter();
 
     let content_length = util::get_content_length_header(&req);
@@ -71,12 +71,16 @@ pub async fn put_portfolio(
     }
     let content_length = content_length.unwrap();
     if content_length > data.limits.portfolio.max_file_size {
+        tracing::debug!(
+            content_length,
+            max_content_length = data.limits.portfolio.max_file_size,
+            "Content-Length header exceeds maximum",);
         return HttpResponse::PayloadTooLarge();
     }
     let lots = match csv_to_lot(csv) {
         Ok(csv_lots) => csv_lots,
-        Err(e) => {
-            tracing::debug!("Invalid upload: {:?}", e);
+        Err(error) => {
+            tracing::debug!(?error, "failed to convert CSV to Lots");
             return HttpResponse::BadRequest()
         }
     };
@@ -94,8 +98,8 @@ pub async fn put_portfolio(
         .await
     {
         Ok(_) => HttpResponse::Ok(),
-        Err(e) => {
-            tracing::error!("get_lots error: {e}");
+        Err(error) => {
+            tracing::error!(?error, "failed to persist portfolio");
             HttpResponse::InternalServerError()
         }
     }
