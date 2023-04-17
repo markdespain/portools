@@ -60,7 +60,7 @@ pub async fn put_portfolio(
     if content_length.is_err() {
         return match content_length.unwrap_err() {
             Malformed(message) => {
-                tracing::debug!("bad request: {message}");
+                tracing::debug!(%message, "malformed Content-Length header");
                 HttpResponse::BadRequest()
             }
             Missing => {
