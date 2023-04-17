@@ -81,7 +81,7 @@ mod util {
     use mongodb::Client;
     use portools::dao::local::InMemoryDao;
     use rust_decimal::Decimal;
-
+    use tracing;
     use portools::dao::mongo::MongoDao;
     use portools::dao::{mongo, Dao};
     use portools::model::{Currency, Lot, Portfolio};
@@ -121,7 +121,7 @@ mod util {
     pub async fn init_dao() -> Box<dyn Dao> {
         match std::env::var("MONGODB_URI") {
             Ok(uri) => {
-                println!("using Mongo DAO with URI {}", uri.clone());
+                tracing::info!("using Mongo DAO with URI {}", uri.clone());
                 let client = Client::with_uri_str(&uri)
                     .await
                     .expect("should be able to connect");
@@ -134,7 +134,7 @@ mod util {
                 panic!("MONGODB_URI environment variable was not unicode string");
             }
             Err(VarError::NotPresent) => {
-                println!("using in-memory DAO");
+                tracing::info!("using in-memory DAO");
                 let dao: InMemoryDao = Default::default();
                 Box::new(dao)
             }

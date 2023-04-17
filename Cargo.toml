@@ -16,6 +16,7 @@ actix-http = "3.3.1"
 actix-web = "4"
 chrono = { version = "0.4.24", features = ["serde"] }
 csv = "1.2.1"
+env_logger = "0.10.0"
 futures-util = "0.3.27"
 mongodb = "2.4.0"
 mongo-util = { path = "libs/mongo-util" }
