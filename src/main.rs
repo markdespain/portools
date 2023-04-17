@@ -1,7 +1,9 @@
 use actix_web::{web::Data, App, HttpServer};
 use mongodb::Client;
 use std::io;
+use confy;
 
+use portools::config::Limits;
 use portools::dao::mongo;
 use portools::dao::mongo::MongoDao;
 use portools::service;
@@ -25,7 +27,15 @@ async fn main() -> io::Result<()> {
         .await
         .expect("should be able create collections and indexes");
 
-    let app_state = Data::new(State::new(Box::new(MongoDao::new(client))));
+    let limits : Limits = confy::load("portools", None).expect(
+        "should be able to load configuration"
+    );
+    tracing::info!("using limits: {:?}", limits);
+
+    let app_state = Data::new(State{
+        limits,
+        dao : Box::new(MongoDao::new(client))
+    });
     HttpServer::new(move || App::new().configure(|cfg| service::config(cfg, &app_state)))
         .bind(("0.0.0.0", 8080))?
         .run()
