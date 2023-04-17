@@ -63,7 +63,10 @@ pub async fn put_portfolio(
                 tracing::debug!("bad request: {message}");
                 HttpResponse::BadRequest()
             }
-            Missing => HttpResponse::LengthRequired(),
+            Missing => {
+                tracing::debug!("missing Content-Length header");
+                HttpResponse::LengthRequired()
+            },
         };
     }
     let content_length = content_length.unwrap();
