@@ -31,9 +31,12 @@ pub async fn get_portfolio(
     let span = tracing::info_span!("get_portfolio", %request_id, %portfolio_id);
     let _guard = span.enter();
 
-    match data.dao.get_portfolio(portfolio_id)
+    match data
+        .dao
+        .get_portfolio(portfolio_id)
         .instrument(tracing::debug_span!("dao.get_portfolio"))
-        .await {
+        .await
+    {
         Ok(Some(portfolio)) => Ok(Json(portfolio)),
         Ok(None) => Err(error::ErrorNotFound("portfolio not found")),
         Err(e) => {
@@ -78,9 +81,12 @@ pub async fn put_portfolio(
                 id: portfolio_id,
                 lots,
             };
-            match data.dao.put_portfolio(&portfolio)
+            match data
+                .dao
+                .put_portfolio(&portfolio)
                 .instrument(tracing::debug_span!("dao.put_portfolio"))
-                .await {
+                .await
+            {
                 Ok(_) => HttpResponse::Ok(),
                 Err(e) => {
                     tracing::error!("get_lots error: {e}");

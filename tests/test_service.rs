@@ -80,13 +80,13 @@ mod util {
     use chrono::NaiveDate;
     use mongodb::Client;
     use portools::dao::local::InMemoryDao;
-    use rust_decimal::Decimal;
-    use tracing;
     use portools::dao::mongo::MongoDao;
     use portools::dao::{mongo, Dao};
     use portools::model::{Currency, Lot, Portfolio};
     use portools::service;
     use portools::service::state::State;
+    use rust_decimal::Decimal;
+    use tracing;
 
     const DATE_FORMAT: &'static str = "%Y/%m/%d";
 

@@ -10,7 +10,7 @@ use portools::service::state::State;
 use tracing::subscriber::set_global_default;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
-use tracing_subscriber::{layer::SubscriberExt, filter::EnvFilter, Registry};
+use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, Registry};
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -35,11 +35,8 @@ async fn main() -> io::Result<()> {
 fn init_logging() {
     LogTracer::init().expect("Failed to set logger");
 
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
-    let formatting_layer = BunyanFormattingLayer::new(
-        "portools".into(), io::stdout
-    );
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    let formatting_layer = BunyanFormattingLayer::new("portools".into(), io::stdout);
     let subscriber = Registry::default()
         .with(env_filter)
         .with(JsonStorageLayer)
