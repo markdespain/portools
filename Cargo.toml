@@ -1,7 +1,4 @@
-[workspace]
-members = [
-    "libs/test-util"
-]
+
 
 [package]
 name = "portools"
@@ -37,3 +34,9 @@ tracing-subscriber = { version ="0.3.16", features = ["env-filter"] }
 [dev-dependencies]
 futures-executor = "0.3.28"
 test-util = { path = "libs/test-util" }
+
+[workspace]
+members = [
+    "libs/mongo-util",
+    "libs/test-util"
+]
