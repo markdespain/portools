@@ -45,7 +45,7 @@ fn create_headers_to_index(
         cause: error.to_string(),
     })?;
     for (i, header) in headers.iter().enumerate() {
-        let header = header.trim().to_ascii_lowercase().into();
+        let header = header.trim().to_ascii_lowercase();
         field_to_index.insert(header, i);
     }
     Ok(field_to_index)
@@ -72,9 +72,9 @@ fn get_field<'a>(
     name_to_index: &'a HashMap<String, usize>,
     record: &'a StringRecord,
 ) -> Result<&'a str, CsvError> {
-    let index = name_to_index.get(name).ok_or(CsvError::MissingHeader {
-        name: name.into(),
-    })?;
+    let index = name_to_index
+        .get(name)
+        .ok_or(CsvError::MissingHeader { name: name.into() })?;
     let field_value = record
         .get(*index)
         .ok_or(CsvError::RecordInvalid {

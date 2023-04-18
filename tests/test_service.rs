@@ -163,9 +163,9 @@ mod util {
     }
 
     pub fn test_config(cfg: &mut ServiceConfig, dao: Box<dyn Dao>) {
-        let app_state = Data::new(State{
-            limits : Default::default(),
-            dao
+        let app_state = Data::new(State {
+            limits: Default::default(),
+            dao,
         });
         service::config(cfg, &app_state);
     }

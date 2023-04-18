@@ -1,7 +1,6 @@
 use actix_web::{web::Data, App, HttpServer};
 use mongodb::Client;
 use std::io;
-use confy;
 
 use portools::config::Limits;
 use portools::dao::mongo;
@@ -14,7 +13,7 @@ use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
 use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, Registry};
 
-const APP_NAME : &str = "portools";
+const APP_NAME: &str = "portools";
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -29,15 +28,16 @@ async fn main() -> io::Result<()> {
         .await
         .expect("should be able create collections and indexes");
 
-    let limits : Limits = confy::load(APP_NAME, None).expect(
-        "should be able to load configuration"
-    );
-    println!("{:?}", confy::get_configuration_file_path(APP_NAME, None));
+    let limits: Limits = confy::load(APP_NAME, None)
+        .unwrap_or_else(|error| {
+            panic!("should be able to load configuration from {:?}. error: {:?}",
+                   confy::get_configuration_file_path(APP_NAME, None), error)
+        });
     tracing::info!("using limits: {:?}", limits);
 
-    let app_state = Data::new(State{
+    let app_state = Data::new(State {
         limits,
-        dao : Box::new(MongoDao::new(client))
+        dao: Box::new(MongoDao::new(client)),
     });
     HttpServer::new(move || App::new().configure(|cfg| service::config(cfg, &app_state)))
         .bind(("0.0.0.0", 8080))?

@@ -4,31 +4,32 @@ use crate::service::state::State;
 use crate::service::util::ContentLengthHeaderError;
 use crate::service::util::ContentLengthHeaderError::Malformed;
 use actix_web::web::{Data, Json, Path};
-use actix_web::{error, get, put, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{error, web, HttpRequest, HttpResponse, Responder};
 use tracing;
 use tracing::Instrument;
-use uuid::Uuid;
+use tracing_actix_web::TracingLogger;
 use ContentLengthHeaderError::Missing;
 
 pub mod state;
 pub(crate) mod util;
 
 pub fn config(cfg: &mut web::ServiceConfig, state: &Data<State>) {
-    cfg.service(put_portfolio)
-        .service(get_portfolio)
-        .app_data(state.clone());
+    cfg.service(
+        // use a scope of "" in order to make use of wrap()
+        // ref: https://github.com/actix/actix-web/issues/797
+        web::scope("")
+            .wrap(TracingLogger::default())
+            .app_data(state.clone())
+            .route("/portfolio/{portfolio_id}", web::get().to(get_portfolio))
+            .route("/portfolio/{portfolio_id}", web::put().to(put_portfolio)),
+    );
 }
 
-#[get("/portfolio/{portfolio_id}")]
 pub async fn get_portfolio(
     path: Path<u32>,
-    data: Data<State>,
+    data: Data<State>
 ) -> actix_web::Result<Json<Portfolio>> {
-    let request_id = Uuid::new_v4();
     let portfolio_id = path.into_inner();
-    let span = tracing::info_span!("get_portfolio", %request_id, %portfolio_id);
-    let _guard = span.enter();
-
     match data
         .dao
         .get_portfolio(portfolio_id)
@@ -44,18 +45,13 @@ pub async fn get_portfolio(
     }
 }
 
-#[put("/portfolio/{portfolio_id}")]
 pub async fn put_portfolio(
     path: Path<u32>,
     csv: web::Bytes,
     req: HttpRequest,
-    data: Data<State>,
+    data: Data<State>
 ) -> impl Responder {
-    let request_id = Uuid::new_v4();
     let portfolio_id = path.into_inner();
-    let span = tracing::info_span!("put_portfolio", %request_id, portfolio_id);
-    let _guard = span.enter();
-
     let content_length = util::get_content_length_header(&req);
     if content_length.is_err() {
         return match content_length.unwrap_err() {
@@ -66,7 +62,7 @@ pub async fn put_portfolio(
             Missing => {
                 tracing::debug!("missing Content-Length header");
                 HttpResponse::LengthRequired()
-            },
+            }
         };
     }
     let content_length = content_length.unwrap();
@@ -74,14 +70,15 @@ pub async fn put_portfolio(
         tracing::debug!(
             content_length,
             max_content_length = data.limits.portfolio.max_file_size,
-            "Content-Length header exceeds maximum",);
+            "Content-Length header exceeds maximum",
+        );
         return HttpResponse::PayloadTooLarge();
     }
     let lots = match csv_to_lot(csv) {
         Ok(csv_lots) => csv_lots,
         Err(error) => {
             tracing::debug!(?error, "failed to convert CSV to Lots");
-            return HttpResponse::BadRequest()
+            return HttpResponse::BadRequest();
         }
     };
     if lots.len() > data.limits.portfolio.max_num_lots {
@@ -103,5 +100,4 @@ pub async fn put_portfolio(
             HttpResponse::InternalServerError()
         }
     }
-
 }

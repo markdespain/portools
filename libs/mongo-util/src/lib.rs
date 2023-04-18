@@ -2,7 +2,6 @@ use mongodb::bson::doc;
 use mongodb::error::Error;
 use mongodb::options::IndexOptions;
 use mongodb::{Client, IndexModel};
-use tracing;
 
 pub async fn create_collection_and_index_if_not_exist<T>(
     client: &Client,

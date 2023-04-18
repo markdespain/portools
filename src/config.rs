@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Limits {
-    pub portfolio: PortfolioLimits
+    pub portfolio: PortfolioLimits,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,4 +19,3 @@ impl Default for PortfolioLimits {
         }
     }
 }
-
