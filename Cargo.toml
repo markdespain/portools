@@ -13,11 +13,11 @@ actix-http = "3.3.1"
 actix-web = { version = "4.3.1", default-features = false, features = ["macros"] }
 chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
 confy = "0.5.1"
-csv = "1.2.1"
+csv = { vesion = "1.2.1", default-features = false}
 futures-util = "0.3.27"
 mongodb = { version="2.4.0", default-features = false, features=["tokio-runtime"] }
 mongo-util = { path = "libs/mongo-util" }
-rust_decimal = { version="1.29.1", features = ["serde-float"] }
+rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }
 rusty-money = { version ="0.4.1", default-features = false, features = ["iso"] }
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 tracing = { version = "0.1.37", features = ["log"] }
