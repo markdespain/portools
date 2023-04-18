@@ -15,7 +15,7 @@ chrono = { version = "0.4.24", features = ["serde"] }
 confy = "0.5.1"
 csv = "1.2.1"
 futures-util = "0.3.27"
-mongodb = "2.4.0"
+mongodb = { version="2.4.0", default-features = false, features=["tokio-runtime"] }
 mongo-util = { path = "libs/mongo-util" }
 rust_decimal = { version="1.29.1", features = ["serde-float"] }
 rusty-money = { version ="0.4.1", features = ["iso"] }
