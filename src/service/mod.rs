@@ -27,7 +27,7 @@ pub fn config(cfg: &mut web::ServiceConfig, state: &Data<State>) {
 
 pub async fn get_portfolio(
     path: Path<u32>,
-    data: Data<State>
+    data: Data<State>,
 ) -> actix_web::Result<Json<Portfolio>> {
     let portfolio_id = path.into_inner();
     match data
@@ -49,7 +49,7 @@ pub async fn put_portfolio(
     path: Path<u32>,
     csv: web::Bytes,
     req: HttpRequest,
-    data: Data<State>
+    data: Data<State>,
 ) -> impl Responder {
     let portfolio_id = path.into_inner();
     let content_length = util::get_content_length_header(&req);

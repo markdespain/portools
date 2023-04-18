@@ -10,7 +10,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.68"
 actix-http = "3.3.1"
-actix-web = "4"
+actix-web = { version = "4.3.1", default-features = false, features = ["macros"] }
 chrono = { version = "0.4.24", features = ["serde"] }
 confy = "0.5.1"
 csv = "1.2.1"

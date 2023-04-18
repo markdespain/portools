@@ -28,11 +28,13 @@ async fn main() -> io::Result<()> {
         .await
         .expect("should be able create collections and indexes");
 
-    let limits: Limits = confy::load(APP_NAME, None)
-        .unwrap_or_else(|error| {
-            panic!("should be able to load configuration from {:?}. error: {:?}",
-                   confy::get_configuration_file_path(APP_NAME, None), error)
-        });
+    let limits: Limits = confy::load(APP_NAME, None).unwrap_or_else(|error| {
+        panic!(
+            "should be able to load configuration from {:?}. error: {:?}",
+            confy::get_configuration_file_path(APP_NAME, None),
+            error
+        )
+    });
     tracing::info!("using limits: {:?}", limits);
 
     let app_state = Data::new(State {
