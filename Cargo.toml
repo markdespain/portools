@@ -13,7 +13,7 @@ actix-http = "3.3.1"
 actix-web = { version = "4.3.1", default-features = false, features = ["macros"] }
 chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
 confy = "0.5.1"
-csv = { vesion = "1.2.1", default-features = false}
+csv = { version = "1.2.1", default-features = false }
 futures-util = "0.3.27"
 mongodb = { version="2.4.0", default-features = false, features=["tokio-runtime"] }
 mongo-util = { path = "libs/mongo-util" }
