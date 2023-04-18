@@ -1,0 +1,9 @@
+[package]
+name = "test-util"
+edition = "2021"
+version = "0.1.0"
+[dependencies.actix-web]
+version = "4"
+features = ["compress-gzip", "compress-brotli", "cookies", "macros"]
+optional = false
+default-features = false
