@@ -1216,7 +1216,6 @@ dependencies = [
  "confy",
  "csv",
  "futures-executor",
- "futures-util",
  "mongo-util",
  "mongodb",
  "rust_decimal",
