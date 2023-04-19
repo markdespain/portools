@@ -14,7 +14,7 @@ chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
 confy = { version = "0.5.1", default-features = false, features = ["toml_conf"] }
 csv = { version = "1.2.1", default-features = false }
 mongodb = { version = "2.4.0", default-features = false, features = ["tokio-runtime"] }
-mongo-util = { path = "libs/mongo-util" }
+mongo-util = { path = "crates/mongo-util" }
 rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }
 rusty-money = { version ="0.4.1", default-features = false, features = ["iso"] }
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
@@ -32,11 +32,11 @@ tracing-subscriber = { version = "0.3.16", default-features = false, features = 
 [dev-dependencies]
 actix-http = { version="3.3.1", default-features = false }
 futures-executor = "0.3.28"
-test-util = { path = "libs/test-util" }
+test-util = { path = "crates/test-util" }
 
 [workspace]
 members = [
     ".",
-    "libs/mongo-util",
-    "libs/test-util"
+    "crates/mongo-util",
+    "crates/test-util"
 ]

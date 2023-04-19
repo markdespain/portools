@@ -1,11 +1,13 @@
-csv_digester.rs: apply reasonable limits to the Lot values
+implement timeouts / cancellation
+https://docs.rs/mongodb/2.4.0/mongodb/#warning-about-timeouts--cancellation
+
+apply reasonable, configurable limits to the Lot values
 // e.g. date shouldn't be in the ancient past
 //      quantity shouldn't be absurdly high
 //      cost_basis shouldn't be absurdly high
 //      (quantity * cost_basis) shouldn't be absurdly high
 //      total portfolio value shouldn't be absurdly high
 //      total number of accounts shouldn't be absurdly high
-main.rs: allow AppLimits to be configurable
 
 mongo.rs:: create the index outside of application startup
 create Docker Swarm / Kubernetes (minikube) workflow ... Dev containers
