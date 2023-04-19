@@ -79,12 +79,12 @@ mod util {
     use actix_web::web::{Bytes, Data, ServiceConfig};
     use chrono::NaiveDate;
     use mongodb::Client;
-    use portools::dao::local::InMemoryDao;
-    use portools::dao::mongo::MongoDao;
-    use portools::dao::{mongo, Dao};
-    use portools::model::{Currency, Lot, Portfolio};
-    use portools::service;
-    use portools::service::state::State;
+    use portools_service::dao::local::InMemoryDao;
+    use portools_service::dao::mongo::MongoDao;
+    use portools_service::dao::{mongo, Dao};
+    use portools_service::model::{Currency, Lot, Portfolio};
+    use portools_service::service;
+    use portools_service::service::state::State;
     use rust_decimal::Decimal;
     use tracing;
 
