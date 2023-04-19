@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
-mongo-util = { path = "../mongo-util" }
 rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }
 rusty-money = { version ="0.4.1", default-features = false, features = ["iso"] }
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }

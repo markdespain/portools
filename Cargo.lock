@@ -1194,7 +1194,6 @@ name = "portools-common"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "mongo-util",
  "rust_decimal",
  "rusty-money",
  "serde",
