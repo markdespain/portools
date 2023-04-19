@@ -6,7 +6,6 @@ use crate::service::util::ContentLengthHeaderError::Malformed;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{error, web, HttpRequest, HttpResponse, Responder};
 use tracing;
-use tracing::Instrument;
 use tracing_actix_web::TracingLogger;
 use ContentLengthHeaderError::Missing;
 
@@ -33,7 +32,6 @@ pub async fn get_portfolio(
     match data
         .dao
         .get_portfolio(portfolio_id)
-        .instrument(tracing::debug_span!("dao.get_portfolio"))
         .await
     {
         Ok(Some(portfolio)) => Ok(Json(portfolio)),
@@ -91,7 +89,6 @@ pub async fn put_portfolio(
     match data
         .dao
         .put_portfolio(&portfolio)
-        .instrument(tracing::debug_span!("dao.put_portfolio"))
         .await
     {
         Ok(_) => HttpResponse::Ok(),

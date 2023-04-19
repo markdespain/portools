@@ -5,6 +5,7 @@ use mongodb::bson::doc;
 use mongodb::error::Error;
 use mongodb::options::FindOneAndReplaceOptions;
 use mongodb::{Client, Collection};
+use tracing;
 
 const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
@@ -22,6 +23,11 @@ impl MongoDao {
 
 #[async_trait]
 impl Dao for MongoDao {
+
+    #[tracing::instrument(
+    skip(self, portfolio),
+    fields(id = portfolio.id)
+    )]
     async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error> {
         let filter = doc! {"id": portfolio.id};
         let options = FindOneAndReplaceOptions::builder()
@@ -38,6 +44,9 @@ impl Dao for MongoDao {
         }
     }
 
+    #[tracing::instrument(
+    skip(self),
+    )]
     async fn get_portfolio(&self, id: u32) -> Result<Option<Portfolio>, Error> {
         let filter = doc! {"id": id};
         self.client
