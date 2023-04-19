@@ -1,4 +1,4 @@
-use crate::model::Portfolio;
+use portools_common::model::Portfolio;
 use async_trait::async_trait;
 use mongodb::error::Error;
 

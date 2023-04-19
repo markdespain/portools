@@ -1,5 +1,5 @@
 use crate::digest::csv_to_lot;
-use crate::model::Portfolio;
+use portools_common::model::Portfolio;
 use crate::service::state::State;
 use crate::service::util::ContentLengthHeaderError;
 use crate::service::util::ContentLengthHeaderError::Malformed;

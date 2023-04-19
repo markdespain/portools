@@ -82,7 +82,7 @@ mod util {
     use portools_service::dao::local::InMemoryDao;
     use portools_service::dao::mongo::MongoDao;
     use portools_service::dao::{mongo, Dao};
-    use portools_service::model::{Currency, Lot, Portfolio};
+    use portools_common::model::{Currency, Lot, Portfolio};
     use portools_service::service;
     use portools_service::service::state::State;
     use rust_decimal::Decimal;
