@@ -1,3 +1,9 @@
+setup a mongo replica set in order to make use of strea
+====
+cargo run -p portools-stream
+thread 'main' panicked at 'failed to get stream: Kind: Command failed: Error code 40573 (Location40573): The $changeStream stage is only supported on replica sets, labels: {}', crates/portools-stream/src/main.rs:28:19
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
 implement timeouts / cancellation
 https://docs.rs/mongodb/2.4.0/mongodb/#warning-about-timeouts--cancellation
 

@@ -13,16 +13,37 @@ const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
 
 #[tokio::main]
-async fn main(){
+async fn main() {
     init_logging();
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
     let client = Client::with_uri_str(&uri)
         .await
         .unwrap_or_else(|_| panic!("should be able to connect to {}", uri));
-    client
+    let mut change_stream = match client
         .database(DB_NAME)
         .collection::<Portfolio>(COLL_PORTFOLIO)
-        .watch(None, None);
+        .watch(None, None)
+        .await {
+        Ok(stream) => stream,
+        Err(e) => panic!("failed to get stream: {e}")
+    };
+    //let mut resume_token = None;
+    while change_stream.is_alive() {
+        match change_stream.next_if_any().await {
+            Ok(Some(ref event)) =>  {
+                // process event
+                println!("operation performed: {:?}, document: {:?}", event.operation_type, event.full_document);
+            }
+            Ok(None) => {
+                println!("got none");
+            }
+            Err(e) => {
+                panic!("got error from stream: {e}")
+            }
+        }
+        //resume_token = change_stream.resume_token();
+    }
+    println!("change stream is no longer alive");
 }
 
 // todo: extract into lib
