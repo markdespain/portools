@@ -2,11 +2,11 @@ use actix_web::{web::Data, App, HttpServer};
 use mongodb::Client;
 use std::io;
 
-use portools::config::Limits;
-use portools::dao::mongo;
-use portools::dao::mongo::MongoDao;
-use portools::service;
-use portools::service::state::State;
+use portools_service::config::Limits;
+use portools_service::dao::mongo;
+use portools_service::dao::mongo::MongoDao;
+use portools_service::service;
+use portools_service::service::state::State;
 
 use tracing::subscriber::set_global_default;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};

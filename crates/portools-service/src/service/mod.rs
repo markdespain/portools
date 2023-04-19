@@ -29,11 +29,7 @@ pub async fn get_portfolio(
     data: Data<State>,
 ) -> actix_web::Result<Json<Portfolio>> {
     let portfolio_id = path.into_inner();
-    match data
-        .dao
-        .get_portfolio(portfolio_id)
-        .await
-    {
+    match data.dao.get_portfolio(portfolio_id).await {
         Ok(Some(portfolio)) => Ok(Json(portfolio)),
         Ok(None) => Err(error::ErrorNotFound("portfolio not found")),
         Err(e) => {
@@ -86,11 +82,7 @@ pub async fn put_portfolio(
         id: portfolio_id,
         lots,
     };
-    match data
-        .dao
-        .put_portfolio(&portfolio)
-        .await
-    {
+    match data.dao.put_portfolio(&portfolio).await {
         Ok(_) => HttpResponse::Ok(),
         Err(error) => {
             tracing::error!(?error, "failed to persist portfolio");

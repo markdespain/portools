@@ -23,7 +23,6 @@ impl MongoDao {
 
 #[async_trait]
 impl Dao for MongoDao {
-
     #[tracing::instrument(
     skip(self, portfolio),
     fields(id = portfolio.id)
@@ -44,9 +43,7 @@ impl Dao for MongoDao {
         }
     }
 
-    #[tracing::instrument(
-    skip(self),
-    )]
+    #[tracing::instrument(skip(self))]
     async fn get_portfolio(&self, id: u32) -> Result<Option<Portfolio>, Error> {
         let filter = doc! {"id": id};
         self.client
