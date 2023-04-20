@@ -1,5 +1,5 @@
 use crate::config::Limits;
-use crate::dao::Dao;
+use portools_common::dao::Dao;
 
 pub struct State {
     pub limits: Limits,

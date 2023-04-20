@@ -1,10 +1,10 @@
 use crate::digest::csv_to_lot;
-use portools_common::model::Portfolio;
 use crate::service::state::State;
 use crate::service::util::ContentLengthHeaderError;
 use crate::service::util::ContentLengthHeaderError::Malformed;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{error, web, HttpRequest, HttpResponse, Responder};
+use portools_common::model::Portfolio;
 use tracing;
 use tracing_actix_web::TracingLogger;
 use ContentLengthHeaderError::Missing;

@@ -4,6 +4,12 @@ use rust_decimal::Decimal;
 use rusty_money::{iso, FormattableCurrency, Money};
 use serde::{Deserialize, Serialize};
 
+type Id = u32;
+
+pub trait Record {
+    fn id(&self) -> Id;
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Currency {
     // the amount of the currency
@@ -30,8 +36,14 @@ impl Currency {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Portfolio {
-    pub id: u32,
+    pub id: Id,
     pub lots: Vec<Lot>,
+}
+
+impl Record for Portfolio {
+    fn id(&self) -> Id {
+        self.id
+    }
 }
 
 // a Lot is an amount of securities purchased on a particular date
@@ -113,6 +125,22 @@ impl Lot {
     #[cfg(test)]
     fn date_acquired_string(&self) -> String {
         format!("{}", self.date_acquired.format(Lot::DATE_FORMAT))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssetAllocation {
+    pub id: Id,
+    pub intl_bonds: Currency,
+    pub us_bonds: Currency,
+    pub intl_real_estate: Currency,
+    pub us_real_estate: Currency,
+    pub other: Currency,
+}
+
+impl Record for AssetAllocation {
+    fn id(&self) -> Id {
+        self.id
     }
 }
 

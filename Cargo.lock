@@ -1193,11 +1193,15 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 name = "portools-common"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
+ "mongo-util",
+ "mongodb",
  "rust_decimal",
  "rusty-money",
  "serde",
  "test-util",
+ "tracing",
 ]
 
 [[package]]
@@ -1206,7 +1210,6 @@ version = "0.1.0"
 dependencies = [
  "actix-http",
  "actix-web",
- "async-trait",
  "chrono",
  "confy",
  "csv",

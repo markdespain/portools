@@ -3,6 +3,7 @@ use mongodb::error::Error;
 use mongodb::options::IndexOptions;
 use mongodb::{Client, IndexModel};
 
+#[tracing::instrument(skip(client))]
 pub async fn create_collection_and_index_if_not_exist<T>(
     client: &Client,
     database: &str,
@@ -13,6 +14,7 @@ pub async fn create_collection_and_index_if_not_exist<T>(
     create_index_if_not_exists::<T>(client, database, collection, &index_name).await
 }
 
+#[tracing::instrument(skip(client))]
 pub async fn create_index_if_not_exists<T>(
     client: &Client,
     database: &str,
@@ -42,6 +44,7 @@ pub async fn create_index_if_not_exists<T>(
     }
 }
 
+#[tracing::instrument(skip(client))]
 async fn create_collection_if_not_exists<T>(
     client: &Client,
     database: &str,

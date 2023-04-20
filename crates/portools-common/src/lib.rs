@@ -1,3 +1,4 @@
+pub mod dao;
 pub mod model;
-pub mod validate;
 pub mod unit_test_util;
+pub mod validate;

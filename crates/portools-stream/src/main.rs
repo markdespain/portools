@@ -1,9 +1,9 @@
+use allocation::AllocationService;
+use mongodb::change_stream::event::OperationType;
 use mongodb::Client;
 use portools_common::model::Portfolio;
 use std::io;
-use tokio;
 use tracing::subscriber::set_global_default;
-use tracing::{info, trace};
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
 use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, Registry};
@@ -12,6 +12,9 @@ const APP_NAME: &str = "portools";
 
 const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
+
+use portools_common::dao::mongo::MongoDao;
+use portools_stream::allocation;
 
 #[tokio::main]
 async fn main() {
@@ -24,22 +27,48 @@ async fn main() {
         .database(DB_NAME)
         .collection::<Portfolio>(COLL_PORTFOLIO)
         .watch(None, None)
-        .await {
+        .await
+    {
         Ok(stream) => stream,
-        Err(e) => panic!("failed to get stream: {e}")
+        Err(_error) => panic!("failed to get stream: {_error}"),
     };
+
+    let service = AllocationService {
+        dao: Box::new(MongoDao::new(client)),
+    };
+
     //let mut resume_token = None;
     while change_stream.is_alive() {
         match change_stream.next_if_any().await {
-            Ok(Some(ref event)) =>  {
+            Ok(Some(event)) => {
                 // process event
-                info!("operation performed: {:?}, document: {:?}", event.operation_type, event.full_document);
+                match event.operation_type {
+                    OperationType::Insert | OperationType::Replace => {
+                        if let Some(ref portfolio) = event.full_document {
+                            match service.update_allocation(portfolio).await {
+                                Err(_error) => {
+                                    tracing::error!("failed to update portfolio allocation")
+                                }
+                                Ok(_) => {
+                                    tracing::info!("updated portfolio allocation")
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        tracing::warn!(
+                            "unsupported operation performed: {:?}, document: {:?}",
+                            event.operation_type,
+                            event.full_document
+                        );
+                    }
+                }
             }
             Ok(None) => {
-                trace!("got none");
+                tracing::trace!("got none");
             }
-            Err(e) => {
-                panic!("got error from stream: {e}")
+            Err(error) => {
+                tracing::error!("got error from stream: {error}")
             }
         }
         //resume_token = change_stream.resume_token();

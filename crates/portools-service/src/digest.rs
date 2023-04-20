@@ -1,7 +1,7 @@
-use portools_common::model::Lot;
-use portools_common::validate::Invalid;
 use actix_web::web::{Buf, Bytes};
 use csv::StringRecord;
+use portools_common::model::Lot;
+use portools_common::validate::Invalid;
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
@@ -88,11 +88,11 @@ fn get_field<'a>(
 #[cfg(test)]
 mod test {
     use crate::digest::{csv_to_lot, CsvError};
-    use portools_common::model::{Currency, Lot};
     use crate::unit_test_util::resource;
-    use portools_common::validate::Invalid;
     use actix_web::web::Bytes;
     use chrono::NaiveDate;
+    use portools_common::model::{Currency, Lot};
+    use portools_common::validate::Invalid;
     use rust_decimal::Decimal;
     use rusty_money::MoneyError::InvalidAmount;
     use test_util::assertion::assert_err_eq;

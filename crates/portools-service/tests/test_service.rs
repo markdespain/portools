@@ -79,9 +79,9 @@ mod util {
     use actix_web::web::{Bytes, Data, ServiceConfig};
     use chrono::NaiveDate;
     use mongodb::Client;
-    use portools_service::dao::local::InMemoryDao;
-    use portools_service::dao::mongo::MongoDao;
-    use portools_service::dao::{mongo, Dao};
+    use portools_common::dao::local::InMemoryDao;
+    use portools_common::dao::mongo::MongoDao;
+    use portools_common::dao::{mongo, Dao};
     use portools_common::model::{Currency, Lot, Portfolio};
     use portools_service::service;
     use portools_service::service::state::State;

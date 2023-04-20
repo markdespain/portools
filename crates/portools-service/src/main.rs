@@ -2,9 +2,10 @@ use actix_web::{web::Data, App, HttpServer};
 use mongodb::Client;
 use std::io;
 
+use portools_common::dao::mongo;
+use portools_common::dao::mongo::MongoDao;
+
 use portools_service::config::Limits;
-use portools_service::dao::mongo;
-use portools_service::dao::mongo::MongoDao;
 use portools_service::service;
 use portools_service::service::state::State;
 
