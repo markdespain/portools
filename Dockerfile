@@ -22,10 +22,10 @@ FROM debian:bullseye-slim as runtime
 ENV MONGODB_URI="mongodb://portools-mongo:27017"
 RUN apt-get update && apt-get install -y curl iputils-ping && rm -rf /var/lib/apt/lists/*
 
-FROM runtime as service_runtime
+FROM runtime as portools-service
 COPY --from=service_builder /portools/target/debug/portools-service /usr/local/bin/portools-service
 CMD ["portools-service"]
 
-FROM runtime as stream_runtime
+FROM runtime as portools-stream
 COPY --from=stream_builder /portools/target/debug/portools-stream /usr/local/bin/portools-stream
 CMD ["portools-stream"]
