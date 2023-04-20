@@ -1,4 +1,4 @@
 #!/bin/sh
-./docker/create_network_bridge.sh
-./docker/run_mongo_container.sh
-docker run --rm --name portools       --network portools-net -d -p 8080:8080    portools
+./scripts/docker/create_network_bridge.sh
+./scripts/docker/run_mongo_container.sh
+docker run --name portools-service       --network portools-net -d -p 8080:8080    portools-service
