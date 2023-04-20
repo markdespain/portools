@@ -3,6 +3,7 @@ use portools_common::model::Portfolio;
 use std::io;
 use tokio;
 use tracing::subscriber::set_global_default;
+use tracing::{info, trace};
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
 use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, Registry};
@@ -32,10 +33,10 @@ async fn main() {
         match change_stream.next_if_any().await {
             Ok(Some(ref event)) =>  {
                 // process event
-                println!("operation performed: {:?}, document: {:?}", event.operation_type, event.full_document);
+                info!("operation performed: {:?}, document: {:?}", event.operation_type, event.full_document);
             }
             Ok(None) => {
-                println!("got none");
+                trace!("got none");
             }
             Err(e) => {
                 panic!("got error from stream: {e}")
