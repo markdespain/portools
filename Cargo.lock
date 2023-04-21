@@ -1234,14 +1234,12 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "futures-executor",
  "mongo-util",
  "mongodb",
  "portools-common",
  "rust_decimal",
  "rusty-money",
  "serde",
- "test-util",
  "tokio",
  "tracing",
 ]

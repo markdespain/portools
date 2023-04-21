@@ -3,7 +3,5 @@ name = "test-util"
 edition = "2021"
 version = "0.1.0"
 
-
 [dependencies]
-actix-web = { version = "4.3.1", default-features = false }
-
+actix-web = { workspace = true }

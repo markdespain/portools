@@ -6,17 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = { version = "0.1.68", default-features = false }
-chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
-mongodb = { version = "2.5.0", default-features = false, features = ["tokio-runtime"] }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+mongodb = { workspace = true, features = ["tokio-runtime"] }
 mongo-util = { path = "../mongo-util" }
 portools-common = { path = "../portools-common" }
-rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }
-rusty-money = { version ="0.4.1", default-features = false, features = ["iso"] }
-serde = { version = "1.0.160", default-features = false, features = ["derive"] }
+rust_decimal = { workspace = true }
+rusty-money = { workspace = true }
+serde = { workspace = true }
 tokio = { version = "1.27.0", default-features = false }
-tracing = { version = "0.1.37", default-features = false }
+tracing = { workspace = true }
 
 [dev-dependencies]
-futures-executor = "0.3.28"
-test-util = { path = "../test-util" }
