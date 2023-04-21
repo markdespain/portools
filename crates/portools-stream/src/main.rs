@@ -1,26 +1,22 @@
 use allocation::AllocationService;
 use mongodb::change_stream::event::{ChangeStreamEvent, OperationType};
-use mongodb::Client;
-use portools_common::model::Portfolio;
-use std::io;
 use mongodb::change_stream::ChangeStream;
-use mongodb::options::{ChangeStreamOptions, FullDocumentBeforeChangeType, FullDocumentType, ReadConcern};
-use tracing::subscriber::set_global_default;
-use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
-use tracing_log::LogTracer;
-use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, Registry};
+use mongodb::options::{
+    ChangeStreamOptions, FullDocumentBeforeChangeType, FullDocumentType, ReadConcern,
+};
+use mongodb::Client;
+use portools_common::dao::mongo::MongoDao;
+use portools_common::log;
+use portools_common::model::Portfolio;
+use portools_stream::allocation;
 
-const APP_NAME: &str = "portools";
-
+const APP_NAME: &str = "portools-stream";
 const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
 
-use portools_common::dao::mongo::MongoDao;
-use portools_stream::allocation;
-
 #[tokio::main]
 async fn main() {
-    init_logging();
+    log::init(APP_NAME).unwrap_or_else(|e| panic!("failed initialize logging. cause: {:?}", e));
 
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
     let client = Client::with_uri_str(&uri)
@@ -32,7 +28,9 @@ async fn main() {
         Err(_error) => panic!("failed to initialize change stream stream: {_error}"),
     };
 
-    let service = AllocationService { dao: Box::new(MongoDao::new(client)) };
+    let service = AllocationService {
+        dao: Box::new(MongoDao::new(client)),
+    };
 
     //let mut resume_token = None;
     while change_stream.is_alive() {
@@ -73,9 +71,11 @@ async fn main() {
     tracing::info!("change stream is no longer alive");
 }
 
-async fn init_change_stream(client: &Client) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
+async fn init_change_stream(
+    client: &Client,
+) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
     // todo(): handle resume token saving and provide to change_stream_options on init
-    let change_stream_options : ChangeStreamOptions = ChangeStreamOptions::builder()
+    let change_stream_options: ChangeStreamOptions = ChangeStreamOptions::builder()
         .full_document(Some(FullDocumentType::UpdateLookup))
         .full_document_before_change(Some(FullDocumentBeforeChangeType::Off))
         .read_concern(Some(ReadConcern::MAJORITY))
@@ -86,17 +86,4 @@ async fn init_change_stream(client: &Client) -> mongodb::error::Result<ChangeStr
         .collection::<Portfolio>(COLL_PORTFOLIO)
         .watch(None, Some(change_stream_options))
         .await
-}
-
-// todo: extract into lib
-fn init_logging() {
-    LogTracer::init().expect("Failed to set logger");
-
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    let formatting_layer = BunyanFormattingLayer::new(APP_NAME.into(), io::stdout);
-    let subscriber = Registry::default()
-        .with(env_filter)
-        .with(JsonStorageLayer)
-        .with(formatting_layer);
-    set_global_default(subscriber).expect("Failed to set subscriber");
 }

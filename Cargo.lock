@@ -1202,6 +1202,9 @@ dependencies = [
  "serde",
  "test-util",
  "tracing",
+ "tracing-bunyan-formatter",
+ "tracing-log",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1223,9 +1226,6 @@ dependencies = [
  "test-util",
  "tracing",
  "tracing-actix-web",
- "tracing-bunyan-formatter",
- "tracing-log",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -1244,9 +1244,6 @@ dependencies = [
  "test-util",
  "tokio",
  "tracing",
- "tracing-bunyan-formatter",
- "tracing-log",
- "tracing-subscriber",
 ]
 
 [[package]]
