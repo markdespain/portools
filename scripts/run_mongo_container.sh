@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Approach: Run MongoDB as a single node replica set.  A replicaa set is needed since the
 # portools-stream crate uses MongoDB Change Sreams.
