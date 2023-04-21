@@ -23,10 +23,9 @@ async fn main() {
         .await
         .unwrap_or_else(|_| panic!("should be able to connect to {}", uri));
 
-    let mut change_stream = match init_change_stream(&client).await {
-        Ok(stream) => stream,
-        Err(_error) => panic!("failed to initialize change stream stream: {_error}"),
-    };
+    let mut change_stream = init_change_stream(&client)
+        .await
+        .unwrap_or_else(|e| panic!("failed to initialize change stream stream: {e}"));
 
     let service = AllocationService {
         dao: Box::new(MongoDao::new(client)),
@@ -34,36 +33,27 @@ async fn main() {
 
     //let mut resume_token = None;
     while change_stream.is_alive() {
-        match change_stream.next_if_any().await {
-            Ok(Some(event)) => {
-                // process event
-                match event.operation_type {
-                    OperationType::Insert | OperationType::Replace => {
-                        if let Some(ref portfolio) = event.full_document {
-                            match service.update_allocation(portfolio).await {
-                                Err(_error) => {
-                                    tracing::error!("failed to update portfolio allocation")
-                                }
-                                Ok(_) => {
-                                    tracing::info!("updated portfolio allocation")
-                                }
-                            }
+        let event = change_stream.next_if_any().await.unwrap_or_else(|error| {
+            tracing::error!( %error, "got an error from the change stream");
+            None
+        });
+        if event.is_none() {
+            continue;
+        }
+        let event = event.unwrap();
+        match event.operation_type {
+            OperationType::Insert | OperationType::Replace => {
+                if let Some(ref portfolio) = event.full_document {
+                    match service.update_allocation(portfolio).await {
+                        Err(error) => {
+                            tracing::error!(%error, "failed to update portfolio allocation")
                         }
-                    }
-                    _ => {
-                        tracing::warn!(
-                            "unsupported operation performed: {:?}, document: {:?}",
-                            event.operation_type,
-                            event.full_document
-                        );
+                        Ok(_) => tracing::info!("updated portfolio allocation"),
                     }
                 }
             }
-            Ok(None) => {
-                tracing::trace!("got none");
-            }
-            Err(error) => {
-                tracing::error!("got error from stream: {error}")
+            _ => {
+                tracing::warn!(operation_type = ?event.operation_type, "unsupported operation type")
             }
         }
         //resume_token = change_stream.resume_token();
