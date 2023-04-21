@@ -62,6 +62,7 @@ async fn consume_next_change_event(
                 }
             }
         }
+        // todo: support delete (and other operation types?)
         _ => {
             tracing::warn!(operation_type = ?event.operation_type, "unsupported operation type")
         }

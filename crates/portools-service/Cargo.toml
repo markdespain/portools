@@ -10,7 +10,7 @@ actix-web = { version = "4.3.1", default-features = false, features = ["macros"]
 chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
 confy = { version = "0.5.1", default-features = false, features = ["toml_conf"] }
 csv = { version = "1.2.1", default-features = false }
-mongodb = { version = "2.4.0", default-features = false, features = ["tokio-runtime"] }
+mongodb = { version = "2.5.0", default-features = false, features = ["tokio-runtime"] }
 mongo-util = { path = "../mongo-util" }
 portools-common = { path = "../portools-common" }
 rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }

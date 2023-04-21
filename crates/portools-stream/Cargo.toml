@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 async-trait = { version = "0.1.68", default-features = false }
 chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
-mongodb = { version = "2.4.0", default-features = false, features = ["tokio-runtime"] }
+mongodb = { version = "2.5.0", default-features = false, features = ["tokio-runtime"] }
 mongo-util = { path = "../mongo-util" }
 portools-common = { path = "../portools-common" }
 rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }
