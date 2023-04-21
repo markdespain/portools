@@ -11,6 +11,7 @@ pub trait Record {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct Currency {
     // the amount of the currency
     pub amount: Decimal,
@@ -48,6 +49,7 @@ impl Record for Portfolio {
 
 // a Lot is an amount of securities purchased on a particular date
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct Lot {
     // name of the brokerage account within the lot is held
     account: String,
@@ -140,6 +142,7 @@ pub enum AssetClass {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+// todo: add validating constructor and #[non_exhaustive]
 pub struct AssetClassAmount {
     pub asset_class: AssetClass,
     pub amount: Currency,

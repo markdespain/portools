@@ -22,10 +22,7 @@ impl AllocationService {
                         let sum = group.into_iter().map(|lot| lot.cost_basis.amount).sum();
                         AssetClassAmount {
                             asset_class,
-                            amount: Currency {
-                                amount: sum,
-                                symbol: currency_symbol.into(),
-                            },
+                            amount: Currency::new(sum, currency_symbol).unwrap(),
                         }
                     })
                     .collect()
