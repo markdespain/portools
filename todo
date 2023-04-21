@@ -1,8 +1,16 @@
-setup a mongo replica set in order to make use of strea
-====
-cargo run -p portools-stream
-thread 'main' panicked at 'failed to get stream: Kind: Command failed: Error code 40573 (Location40573): The $changeStream stage is only supported on replica sets, labels: {}', crates/portools-stream/src/main.rs:28:19
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+implement struct getters in order to preserve invariants
+
+model.rs: support currencies other than USD
+- ideal: every lot can have it's own currency
+
+either restrict to a single currency for now, or implement support for Portfolios with multiple currencies,
+ or gracefully handle otherwise
+ - e.g. portools-streams currently assumes all lots have the same currency
+
+ portools-stream: asset class
+- mappings from symbol to asset class should not be hard-coded
+- allow a symbol to map to multiple asset classes.  i.e. a percentage of each symbol could be represented
+  by a different asset class
 
 implement timeouts / cancellation
 https://docs.rs/mongodb/2.4.0/mongodb/#warning-about-timeouts--cancellation
@@ -15,8 +23,5 @@ apply reasonable, configurable limits to the Lot values
 //      total portfolio value shouldn't be absurdly high
 //      total number of accounts shouldn't be absurdly high
 
-mongo.rs:: create the index outside of application startup
+portools-service:: create the collections, indexes, etc. outside of application startup
 create Docker Swarm / Kubernetes (minikube) workflow ... Dev containers
-
-model.rs: support currencies other than USD
-- ideal: every lot can have it's own currency

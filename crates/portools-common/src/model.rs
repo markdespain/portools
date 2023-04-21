@@ -13,10 +13,10 @@ pub trait Record {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Currency {
     // the amount of the currency
-    amount: Decimal,
+    pub amount: Decimal,
 
     // the symbol for the currency (e.g. "USD")
-    symbol: String,
+    pub symbol: String,
 }
 
 impl Currency {
@@ -53,7 +53,7 @@ pub struct Lot {
     account: String,
 
     // the symbol of the security held
-    symbol: String,
+    pub symbol: String,
 
     // the date that the lot was purchased
     date_acquired: NaiveDate,
@@ -63,7 +63,7 @@ pub struct Lot {
     quantity: Decimal,
 
     // the per-share cost purchase price of this lot
-    cost_basis: Currency,
+    pub cost_basis: Currency,
 }
 
 impl Lot {
@@ -129,13 +129,26 @@ impl Lot {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AssetClass {
+    IntlBonds,
+    UsBonds,
+    IntlRealEstate,
+    UsRealEstate,
+    UsStocks,
+    IntlStocks,
+    Other,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssetClassAmount {
+    pub asset_class: AssetClass,
+    pub amount: Currency,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetAllocation {
     pub id: Id,
-    pub intl_bonds: Currency,
-    pub us_bonds: Currency,
-    pub intl_real_estate: Currency,
-    pub us_real_estate: Currency,
-    pub other: Currency,
+    pub allocations: Vec<AssetClassAmount>,
 }
 
 impl Record for AssetAllocation {
