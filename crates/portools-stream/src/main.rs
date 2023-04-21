@@ -33,32 +33,39 @@ async fn main() {
 
     //let mut resume_token = None;
     while change_stream.is_alive() {
-        let event = change_stream.next_if_any().await.unwrap_or_else(|error| {
-            tracing::error!( %error, "got an error from the change stream");
-            None
-        });
-        if event.is_none() {
-            continue;
-        }
-        let event = event.unwrap();
-        match event.operation_type {
-            OperationType::Insert | OperationType::Replace => {
-                if let Some(ref portfolio) = event.full_document {
-                    match service.update_allocation(portfolio).await {
-                        Err(error) => {
-                            tracing::error!(%error, "failed to update portfolio allocation")
-                        }
-                        Ok(_) => tracing::info!("updated portfolio allocation"),
-                    }
-                }
-            }
-            _ => {
-                tracing::warn!(operation_type = ?event.operation_type, "unsupported operation type")
-            }
-        }
+        consume_next_change_event(&mut change_stream, &service).await;
         //resume_token = change_stream.resume_token();
     }
     tracing::info!("change stream is no longer alive");
+}
+
+async fn consume_next_change_event(
+    change_stream: &mut ChangeStream<ChangeStreamEvent<Portfolio>>,
+    allocation_service: &AllocationService,
+) {
+    let event = change_stream.next_if_any().await.unwrap_or_else(|error| {
+        tracing::error!( %error, "got an error from the change stream");
+        None
+    });
+    if event.is_none() {
+        return;
+    }
+    let event = event.unwrap();
+    match event.operation_type {
+        OperationType::Insert | OperationType::Replace => {
+            if let Some(ref portfolio) = event.full_document {
+                match allocation_service.update_allocation(portfolio).await {
+                    Err(error) => {
+                        tracing::error!(%error, "failed to update portfolio allocation")
+                    }
+                    Ok(_) => tracing::info!("updated portfolio allocation"),
+                }
+            }
+        }
+        _ => {
+            tracing::warn!(operation_type = ?event.operation_type, "unsupported operation type")
+        }
+    }
 }
 
 async fn init_change_stream(
