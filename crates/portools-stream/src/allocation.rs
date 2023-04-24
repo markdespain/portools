@@ -35,7 +35,6 @@ fn get_asset_class(lot: &Lot) -> AssetClass {
     // todo: a percentage of each symbol could be represented by a different asset class
     let symbol = &lot.symbol;
     let asset_class = match &symbol.trim().to_ascii_uppercase()[..] {
-
         // todo: update hard-coded list with broader list of etfs from Vanguard, Shwab, iShares, etc.
         "VOO" | "VTI" => AssetClass::UsStocks,
         "VEA" | "VEU" => AssetClass::IntlStocks,
@@ -56,14 +55,12 @@ pub enum AllocationServiceError {
     DataAccessError { cause: Error },
 }
 
-
-
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDate;
-    use rust_decimal::Decimal;
-    use portools_common::model::{AssetClass, Currency, Lot};
     use crate::allocation::get_asset_class;
+    use chrono::NaiveDate;
+    use portools_common::model::{AssetClass, Currency, Lot};
+    use rust_decimal::Decimal;
 
     pub fn lot_for_symbol(symbol: &str) -> Lot {
         Lot::new(
@@ -72,23 +69,50 @@ mod tests {
             NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
             Decimal::from(6),
             Currency::new("300.64".parse().unwrap(), "USD").unwrap(),
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[test]
-    fn test_get_asset_class(){
-        assert_eq!( AssetClass::UsStocks, get_asset_class(&lot_for_symbol("VOO")));
-        assert_eq!( AssetClass::UsStocks, get_asset_class(&lot_for_symbol("VTI")));
+    fn test_get_asset_class() {
+        assert_eq!(
+            AssetClass::UsStocks,
+            get_asset_class(&lot_for_symbol("VOO"))
+        );
+        assert_eq!(
+            AssetClass::UsStocks,
+            get_asset_class(&lot_for_symbol("VTI"))
+        );
 
-        assert_eq!( AssetClass::UsRealEstate, get_asset_class(&lot_for_symbol("VNQ")));
+        assert_eq!(
+            AssetClass::UsRealEstate,
+            get_asset_class(&lot_for_symbol("VNQ"))
+        );
 
-        assert_eq!( AssetClass::IntlRealEstate, get_asset_class(&lot_for_symbol("VNQI")));
+        assert_eq!(
+            AssetClass::IntlRealEstate,
+            get_asset_class(&lot_for_symbol("VNQI"))
+        );
 
-        assert_eq!( AssetClass::UsBonds, get_asset_class(&lot_for_symbol("BND")));
+        assert_eq!(AssetClass::UsBonds, get_asset_class(&lot_for_symbol("BND")));
 
-        assert_eq!( AssetClass::IntlBonds, get_asset_class(&lot_for_symbol("BNDX")));
+        assert_eq!(
+            AssetClass::IntlBonds,
+            get_asset_class(&lot_for_symbol("BNDX"))
+        );
 
         // not yet supported
-        assert_eq!( AssetClass::Unknown, get_asset_class(&lot_for_symbol("SCHB")));
+        assert_eq!(
+            AssetClass::Unknown,
+            get_asset_class(&lot_for_symbol("SCHB"))
+        );
+    }
+
+    #[test]
+    fn test_get_asset_class_with_lowercase_and_padded_symbol() {
+        assert_eq!(
+            AssetClass::UsStocks,
+            get_asset_class(&lot_for_symbol("  voo  "))
+        );
     }
 }
