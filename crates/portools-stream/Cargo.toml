@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 async-trait = { workspace = true }
 chrono = { workspace = true }
-itertools = { version = "0.10.5" }
 mongodb = { workspace = true, features = ["tokio-runtime"] }
 mongo-util = { path = "../mongo-util" }
 portools-common = { path = "../portools-common" }

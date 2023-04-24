@@ -1,5 +1,5 @@
 use crate::dao::Dao;
-use crate::model::{AssetAllocation, Portfolio, Record};
+use crate::model::{AssetClass, Portfolio, PortfolioSummary, Record};
 use async_trait::async_trait;
 use mongodb::bson::doc;
 use mongodb::error::Error;
@@ -11,7 +11,7 @@ use tracing;
 
 const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
-const COLL_ASSET_ALLOC: &str = "asset_alloc";
+const COLL_ASSET_ALLOC: &str = "portfolio_by_asset_class";
 
 #[derive(Clone, Debug)]
 pub struct MongoDao {
@@ -60,7 +60,10 @@ impl Dao for MongoDao {
             .await
     }
 
-    async fn put_asset_allocation(&self, asset_allocation: &AssetAllocation) -> Result<(), Error> {
+    async fn put_summary_by_asset_class(
+        &self,
+        asset_allocation: &PortfolioSummary<AssetClass>,
+    ) -> Result<(), Error> {
         self.put(COLL_ASSET_ALLOC, asset_allocation).await
     }
 }
@@ -69,7 +72,7 @@ impl Dao for MongoDao {
 pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<(), Error> {
     mongo_util::drop_and_create_collection_and_index::<Portfolio>(client, DB_NAME, COLL_PORTFOLIO)
         .await?;
-    mongo_util::drop_and_create_collection_and_index::<AssetAllocation>(
+    mongo_util::drop_and_create_collection_and_index::<PortfolioSummary<AssetClass>>(
         client,
         DB_NAME,
         COLL_ASSET_ALLOC,
@@ -85,7 +88,7 @@ pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error
         COLL_PORTFOLIO,
     )
     .await?;
-    mongo_util::create_collection_and_index_if_not_exist::<AssetAllocation>(
+    mongo_util::create_collection_and_index_if_not_exist::<PortfolioSummary<AssetClass>>(
         client,
         DB_NAME,
         COLL_ASSET_ALLOC,

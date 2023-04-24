@@ -50,13 +50,17 @@ async fn consume_next_change_event(
     if event.is_none() {
         return;
     }
+    // todo: add tracing span with at least portfolio id
     let event = event.unwrap();
     match event.operation_type {
         OperationType::Insert | OperationType::Replace => {
             if let Some(ref portfolio) = event.full_document {
-                match allocation_service.update_allocation(portfolio).await {
+                match allocation_service
+                    .put_summary_by_asset_class(portfolio)
+                    .await
+                {
                     Err(error) => {
-                        tracing::error!(%error, "failed to update portfolio allocation")
+                        tracing::error!(?error, "failed to update portfolio summary by asset class")
                     }
                     Ok(_) => tracing::info!("updated portfolio allocation"),
                 }

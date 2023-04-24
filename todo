@@ -1,3 +1,5 @@
+job to look up and persist symbol prices
+
 implement struct getters in order to preserve invariants
 
 model.rs: support currencies other than USD

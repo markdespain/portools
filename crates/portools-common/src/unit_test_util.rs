@@ -4,6 +4,13 @@ pub mod fixture {
     use chrono::NaiveDate;
     use rust_decimal::Decimal;
 
+    pub fn currency() -> Currency {
+        Currency {
+            amount: Decimal::from(1),
+            symbol: String::from("USD"),
+        }
+    }
+
     pub fn lot() -> Lot {
         Lot::new(
             "Taxable",
