@@ -29,7 +29,6 @@ pub fn get_summary_by_asset_class(
     portfolio.get_summary_by(get_asset_class)
 }
 
-// todo: add unit tests
 fn get_asset_class(lot: &Lot) -> AssetClass {
     // todo: should not be hard-coded
     // todo: a percentage of each symbol could be represented by a different asset class
@@ -57,10 +56,13 @@ pub enum AllocationServiceError {
 
 #[cfg(test)]
 mod tests {
-    use crate::allocation::get_asset_class;
+    use crate::allocation::{get_asset_class, get_summary_by_asset_class};
     use chrono::NaiveDate;
-    use portools_common::model::{AssetClass, Currency, Lot};
+    use portools_common::model::{
+        AssetClass, Currency, GroupSummary, Lot, Portfolio, PortfolioSummary,
+    };
     use rust_decimal::Decimal;
+    use std::collections::HashMap;
 
     pub fn lot_for_symbol(symbol: &str) -> Lot {
         Lot::new(
@@ -113,6 +115,222 @@ mod tests {
         assert_eq!(
             AssetClass::UsStocks,
             get_asset_class(&lot_for_symbol("  voo  "))
+        );
+    }
+
+    #[test]
+    fn get_summary_by_asset_class_with_one_lot() {
+        let id = 1;
+        let lot = lot_for_symbol("VOO");
+        let portfolio = Portfolio {
+            id,
+            lots: vec![lot.clone()],
+        };
+
+        let allocation = get_summary_by_asset_class(&portfolio).unwrap();
+        assert_eq!(
+            PortfolioSummary {
+                id,
+                group_to_summary: HashMap::from([(
+                    AssetClass::UsStocks,
+                    GroupSummary {
+                        cost: lot.get_total_cost().unwrap()
+                    }
+                )])
+            },
+            allocation
+        )
+    }
+
+    #[test]
+    fn get_summary_by_asset_class_with_two_lots_with_same_symbol() {
+        let id = 1;
+        let lot_1 = Lot::new(
+            "Taxable",
+            "VOO",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(1),
+            Currency::new("100.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+        let lot_2 = Lot::new(
+            "Taxable",
+            "VOO",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(2),
+            Currency::new("200.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+
+        let portfolio = Portfolio {
+            id,
+            lots: vec![lot_1.clone(), lot_2.clone()],
+        };
+        let allocation = get_summary_by_asset_class(&portfolio).unwrap();
+        assert_eq!(
+            PortfolioSummary {
+                id,
+                group_to_summary: HashMap::from([(
+                    AssetClass::UsStocks,
+                    GroupSummary {
+                        cost: lot_1
+                            .get_total_cost()
+                            .unwrap()
+                            .add(&lot_2.get_total_cost().unwrap())
+                            .unwrap()
+                    }
+                )])
+            },
+            allocation
+        )
+    }
+
+    #[test]
+    fn portfolio_get_allocation_by_symbol_with_two_lots_with_same_asset_class_different_symbols() {
+        let id = 1;
+        let lot_1 = Lot::new(
+            "Taxable",
+            "VOO",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(1),
+            Currency::new("100.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+        let lot_2 = Lot::new(
+            "Taxable",
+            "VTI",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(2),
+            Currency::new("200.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+
+        let portfolio = Portfolio {
+            id,
+            lots: vec![lot_1.clone(), lot_2.clone()],
+        };
+        let allocation = get_summary_by_asset_class(&portfolio).unwrap();
+        assert_eq!(
+            PortfolioSummary {
+                id,
+                group_to_summary: HashMap::from([(
+                    AssetClass::UsStocks,
+                    GroupSummary {
+                        cost: lot_1
+                            .get_total_cost()
+                            .unwrap()
+                            .add(&lot_2.get_total_cost().unwrap())
+                            .unwrap()
+                    }
+                )])
+            },
+            allocation
+        )
+    }
+
+    #[test]
+    fn get_summary_by_asset_class_with_two_lots_with_different_asset_classes() {
+        let id = 1;
+        let lot_1 = Lot::new(
+            "Taxable",
+            "VOO",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(6),
+            Currency::new("300.64".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+        let lot_2 = Lot::new(
+            "IRA",
+            "BND",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(6),
+            Currency::new("300.64".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+
+        let portfolio = Portfolio {
+            id,
+            lots: vec![lot_1.clone(), lot_2.clone()],
+        };
+        let allocation = get_summary_by_asset_class(&portfolio).unwrap();
+        assert_eq!(
+            PortfolioSummary {
+                id,
+                group_to_summary: HashMap::from([
+                    (
+                        AssetClass::UsStocks,
+                        GroupSummary {
+                            cost: lot_1.get_total_cost().unwrap()
+                        }
+                    ),
+                    (
+                        AssetClass::UsBonds,
+                        GroupSummary {
+                            cost: lot_2.get_total_cost().unwrap()
+                        }
+                    ),
+                ])
+            },
+            allocation
+        );
+    }
+
+    #[test]
+    fn get_summary_by_asset_class_lots_with_a_shared_asset_class() {
+        let id = 1;
+        let lot_1 = Lot::new(
+            "Taxable",
+            "VOO",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(1),
+            Currency::new("100.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+        let lot_2 = Lot::new(
+            "Taxable",
+            "VEA",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(2),
+            Currency::new("200.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+        let lot_3 = Lot::new(
+            "IRA",
+            "VTI",
+            NaiveDate::from_ymd_opt(2023, 3, 27).unwrap(),
+            Decimal::from(3),
+            Currency::new("300.00".parse().unwrap(), "USD").unwrap(),
+        )
+        .unwrap();
+
+        let portfolio = Portfolio {
+            id,
+            lots: vec![lot_1.clone(), lot_2.clone(), lot_3.clone()],
+        };
+        let allocation = get_summary_by_asset_class(&portfolio).unwrap();
+        assert_eq!(
+            PortfolioSummary {
+                id,
+                group_to_summary: HashMap::from([
+                    (
+                        AssetClass::UsStocks,
+                        GroupSummary {
+                            cost: lot_1
+                                .get_total_cost()
+                                .unwrap()
+                                .add(&lot_3.get_total_cost().unwrap())
+                                .unwrap()
+                        }
+                    ),
+                    (
+                        AssetClass::IntlStocks,
+                        GroupSummary {
+                            cost: lot_2.get_total_cost().unwrap()
+                        }
+                    ),
+                ])
+            },
+            allocation
         );
     }
 }

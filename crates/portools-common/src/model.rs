@@ -228,7 +228,7 @@ impl Lot {
     }
 
     // todo(): add unit tests
-    fn get_total_cost(&self) -> Result<Currency, CurrencyError<Decimal>> {
+    pub fn get_total_cost(&self) -> Result<Currency, CurrencyError<Decimal>> {
         self.cost_basis.multiply(&self.quantity)
     }
 
