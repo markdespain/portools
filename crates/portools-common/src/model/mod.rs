@@ -2,7 +2,7 @@ mod currency;
 
 pub use currency::*;
 
-use crate::validate::{Invalid, trim_and_validate_len, validate_positive};
+use crate::validate::{trim_and_validate_len, validate_positive, Invalid};
 use chrono::naive::NaiveDate;
 use std::collections::HashMap;
 
@@ -10,7 +10,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 use rust_decimal::Decimal;
-use rusty_money::{FormattableCurrency, iso, Money};
+use rusty_money::{iso, FormattableCurrency, Money};
 use serde::{Deserialize, Serialize};
 
 type Id = u32;
@@ -200,7 +200,8 @@ impl<T: Hash + Eq> Record for PortfolioSummary<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{GroupSummary, Lot, Portfolio, PortfolioSummary};
+    use crate::model::currency::Currency;
+    use crate::model::{GroupSummary, Lot, Portfolio, PortfolioSummary, USD};
     use crate::unit_test_util::fixture;
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
@@ -209,7 +210,6 @@ mod tests {
     use std::collections::HashMap;
     use test_util;
     use test_util::assertion::{assert_err_eq, assert_is_err, assert_ok_eq};
-    use crate::model::currency::Currency;
 
     // Currency Tests
 
@@ -397,7 +397,7 @@ mod tests {
     #[test]
     fn lot_new_with_zero_cost_basis() {
         let lot_spec = Lot {
-            cost_basis: Currency::new(Decimal::from(0), "USD").unwrap(),
+            cost_basis: Currency::new(Decimal::ZERO, USD).unwrap(),
             ..fixture::lot()
         };
         let expected_error = Invalid {
@@ -410,7 +410,7 @@ mod tests {
     #[test]
     fn lot_new_with_negative_cost_basis() {
         let lot_spec = Lot {
-            cost_basis: Currency::new(Decimal::from(-1), "USD").unwrap(),
+            cost_basis: Currency::new(Decimal::NEGATIVE_ONE, USD).unwrap(),
             ..fixture::lot()
         };
         let expected_error = Invalid {

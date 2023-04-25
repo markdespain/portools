@@ -1,6 +1,9 @@
+use crate::validate::{trim_and_validate_len, Invalid};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::validate::{Invalid, trim_and_validate_len};
+
+pub const USD: &str = "USD";
+pub const JPY: &str = "JPY";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
@@ -26,7 +29,6 @@ impl Currency {
         Ok(Currency { amount, symbol })
     }
 
-    // todo: unit tests
     pub fn add(&self, other: &Currency) -> Result<Currency, CurrencyError<Currency>> {
         if self.symbol != other.symbol {
             return Err(CurrencyError::SymbolMismatch {
@@ -62,7 +64,7 @@ impl Currency {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CurrencyError<T> {
     SymbolMismatch {
         left: String,
@@ -77,33 +79,68 @@ pub enum CurrencyError<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::model::currency::{Currency, JPY, USD};
+    use crate::model::CurrencyError;
     use crate::unit_test_util::fixture;
     use rust_decimal::Decimal;
-    use crate::model::currency::Currency;
+    use test_util::assertion::assert_ok_eq;
 
     #[test]
-    fn currency_new() {
+    fn new() {
+        assert_eq!(Ok(fixture::currency()), Currency::new(Decimal::ONE, USD));
+    }
+
+    #[test]
+    fn new_with_symbol_with_whitespace() {
         assert_eq!(
             Ok(fixture::currency()),
-            Currency::new(Decimal::from(1), "USD")
+            Currency::new(Decimal::ONE, " USD ")
         );
     }
 
     #[test]
-    fn currency_new_symbol_with_whitespace() {
-        assert_eq!(
-            Ok(fixture::currency()),
-            Currency::new(Decimal::from(1), " USD ")
-        );
+    fn new_with_symbol_too_short() {
+        assert!(Currency::new(Decimal::ONE, "").is_err());
     }
 
     #[test]
-    fn currency_new_symbol_too_short() {
-        assert!(Currency::new(Decimal::from(1), "").is_err());
+    fn new_with_symbol_too_long() {
+        assert!(Currency::new(Decimal::ONE, "US Dollars").is_err());
     }
 
     #[test]
-    fn currency_new_symbol_too_long() {
-        assert!(Currency::new(Decimal::from(1), "US Dollars").is_err());
+    fn add_basic() {
+        let currency_1 = Currency::new(Decimal::ONE, USD).unwrap();
+        let currency_2 = Currency::new(Decimal::TWO, USD).unwrap();
+        let sum = currency_1.add(&currency_2);
+        assert_ok_eq(&Currency::new(Decimal::from(3), USD).unwrap(), &sum)
+    }
+
+    #[test]
+    fn add_causing_overflow() {
+        let currency_1 = Currency::new(Decimal::MAX, USD).unwrap();
+        let currency_2 = Currency::new(Decimal::ONE, USD).unwrap();
+        match currency_1.add(&currency_2) {
+            Ok(value) => panic!("expected error, but got {:?}", value),
+            Err(CurrencyError::Overflow { left, right, .. }) => {
+                assert_eq!(currency_1, left);
+                assert_eq!(currency_2, right);
+            }
+            Err(unexpected) => panic!("got a different error than expected: {:?}", unexpected),
+        };
+    }
+
+    #[test]
+    fn add_with_different_currencies() {
+        let currency_1 = Currency::new(Decimal::ONE, USD).unwrap();
+        let currency_2 = Currency::new(Decimal::ONE, JPY).unwrap();
+        match currency_1.add(&currency_2) {
+            Ok(value) => panic!("expected error, but got {:?}", value),
+            Err(CurrencyError::SymbolMismatch { left, right, .. }) => {
+                assert_eq!(USD, left);
+                assert_eq!(JPY, right);
+            }
+            Err(unexpected) => panic!("got a different error than expected: {:?}", unexpected),
+        };
     }
 }
