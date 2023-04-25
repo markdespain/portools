@@ -133,9 +133,7 @@ mod tests {
                 id,
                 group_to_summary: HashMap::from([(
                     AssetClass::UsStocks,
-                    GroupSummary {
-                        cost: lot.get_total_cost().unwrap()
-                    }
+                    GroupSummary::new(lot.get_total_cost().unwrap()).unwrap()
                 )])
             },
             allocation
@@ -172,13 +170,14 @@ mod tests {
                 id,
                 group_to_summary: HashMap::from([(
                     AssetClass::UsStocks,
-                    GroupSummary {
-                        cost: lot_1
+                    GroupSummary::new(
+                        lot_1
                             .get_total_cost()
                             .unwrap()
                             .add(&lot_2.get_total_cost().unwrap())
                             .unwrap()
-                    }
+                    )
+                    .unwrap()
                 )])
             },
             allocation
@@ -215,13 +214,14 @@ mod tests {
                 id,
                 group_to_summary: HashMap::from([(
                     AssetClass::UsStocks,
-                    GroupSummary {
-                        cost: lot_1
+                    GroupSummary::new(
+                        lot_1
                             .get_total_cost()
                             .unwrap()
                             .add(&lot_2.get_total_cost().unwrap())
                             .unwrap()
-                    }
+                    )
+                    .unwrap()
                 )])
             },
             allocation
@@ -259,15 +259,11 @@ mod tests {
                 group_to_summary: HashMap::from([
                     (
                         AssetClass::UsStocks,
-                        GroupSummary {
-                            cost: lot_1.get_total_cost().unwrap()
-                        }
+                        GroupSummary::new(lot_1.get_total_cost().unwrap()).unwrap()
                     ),
                     (
                         AssetClass::UsBonds,
-                        GroupSummary {
-                            cost: lot_2.get_total_cost().unwrap()
-                        }
+                        GroupSummary::new(lot_2.get_total_cost().unwrap()).unwrap()
                     ),
                 ])
             },
@@ -314,19 +310,18 @@ mod tests {
                 group_to_summary: HashMap::from([
                     (
                         AssetClass::UsStocks,
-                        GroupSummary {
-                            cost: lot_1
+                        GroupSummary::new(
+                            lot_1
                                 .get_total_cost()
                                 .unwrap()
                                 .add(&lot_3.get_total_cost().unwrap())
                                 .unwrap()
-                        }
+                        )
+                        .unwrap()
                     ),
                     (
                         AssetClass::IntlStocks,
-                        GroupSummary {
-                            cost: lot_2.get_total_cost().unwrap()
-                        }
+                        GroupSummary::new(lot_2.get_total_cost().unwrap()).unwrap()
                     ),
                 ])
             },

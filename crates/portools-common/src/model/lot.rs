@@ -96,13 +96,13 @@ impl Lot {
 mod tests {
     use crate::model::currency::Currency;
     use crate::model::{Lot, USD};
+    use crate::unit_test_util::factory::{new_lot_from_spec, new_usd_unchecked};
     use crate::unit_test_util::fixture;
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
     use rust_decimal::Decimal;
     use test_util;
     use test_util::assertion::{assert_err_eq, assert_is_err, assert_ok_eq};
-    use crate::unit_test_util::factory::{new_lot_from_spec, new_usd_unchecked};
 
     #[test]
     fn from_str_valid() {

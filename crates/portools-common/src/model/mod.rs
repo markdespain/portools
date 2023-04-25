@@ -90,9 +90,24 @@ pub enum AssetClass {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-// todo(): add validating constructor and #[non_exhaustive]
+#[non_exhaustive]
 pub struct GroupSummary {
     pub cost: Currency,
+}
+
+impl GroupSummary {
+    pub fn new(cost: Currency) -> Result<GroupSummary, GroupSummaryError> {
+        if cost.amount.is_sign_negative() {
+            Err(GroupSummaryError::NegativeCost { cost })
+        } else {
+            Ok(GroupSummary { cost })
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum GroupSummaryError {
+    NegativeCost { cost: Currency },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
