@@ -22,7 +22,6 @@ impl AllocationService {
     }
 }
 
-// todo: add unit tests
 pub fn get_summary_by_asset_class(
     portfolio: &Portfolio,
 ) -> Result<PortfolioSummary<AssetClass>, PortfolioSummaryError> {
