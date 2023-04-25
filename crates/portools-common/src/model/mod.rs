@@ -1,4 +1,8 @@
-use crate::validate::{trim_and_validate_len, validate_positive, Invalid};
+mod currency;
+
+pub use currency::*;
+
+use crate::validate::{Invalid, trim_and_validate_len, validate_positive};
 use chrono::naive::NaiveDate;
 use std::collections::HashMap;
 
@@ -6,86 +10,13 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 use rust_decimal::Decimal;
-use rusty_money::{iso, FormattableCurrency, Money};
+use rusty_money::{FormattableCurrency, iso, Money};
 use serde::{Deserialize, Serialize};
 
 type Id = u32;
 
 pub trait Record {
     fn id(&self) -> Id;
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct Currency {
-    // the amount of the currency
-    pub amount: Decimal,
-
-    // the symbol for the currency (e.g. "USD")
-    pub symbol: String,
-}
-
-impl Currency {
-    const MIN_SYMBOL_LEN: usize = 1;
-    const MAX_SYMBOL_LEN: usize = 5;
-
-    pub fn new(amount: Decimal, symbol: &str) -> Result<Currency, Invalid> {
-        let symbol = trim_and_validate_len(
-            "symbol",
-            symbol,
-            Currency::MIN_SYMBOL_LEN,
-            Currency::MAX_SYMBOL_LEN,
-        )?;
-        Ok(Currency { amount, symbol })
-    }
-
-    // todo: unit tests
-    pub fn add(&self, other: &Currency) -> Result<Currency, CurrencyError<Currency>> {
-        if self.symbol != other.symbol {
-            return Err(CurrencyError::SymbolMismatch {
-                left: self.symbol.clone(),
-                right: other.symbol.clone(),
-            });
-        }
-        match self.amount.checked_add(other.amount) {
-            Some(sum) => Ok(Currency {
-                amount: sum,
-                symbol: self.symbol.clone(),
-            }),
-            None => Err(CurrencyError::Overflow {
-                left: self.clone(),
-                right: other.clone(),
-                operation: "add".into(),
-            }),
-        }
-    }
-
-    pub fn multiply(&self, other: &Decimal) -> Result<Currency, CurrencyError<Decimal>> {
-        match self.amount.checked_mul(*other) {
-            Some(sum) => Ok(Currency {
-                amount: sum,
-                symbol: self.symbol.clone(),
-            }),
-            None => Err(CurrencyError::Overflow {
-                left: self.clone(),
-                right: *other,
-                operation: "add".into(),
-            }),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum CurrencyError<T> {
-    SymbolMismatch {
-        left: String,
-        right: String,
-    },
-    Overflow {
-        left: Currency,
-        right: T,
-        operation: String,
-    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -269,7 +200,7 @@ impl<T: Hash + Eq> Record for PortfolioSummary<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Currency, GroupSummary, Lot, Portfolio, PortfolioSummary};
+    use crate::model::{GroupSummary, Lot, Portfolio, PortfolioSummary};
     use crate::unit_test_util::fixture;
     use crate::validate::Reason::{ParseDateError, ParseDecimalError, ParseMoneyError};
     use crate::validate::{Invalid, Reason};
@@ -278,6 +209,7 @@ mod tests {
     use std::collections::HashMap;
     use test_util;
     use test_util::assertion::{assert_err_eq, assert_is_err, assert_ok_eq};
+    use crate::model::currency::Currency;
 
     // Currency Tests
 
