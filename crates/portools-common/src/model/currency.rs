@@ -143,4 +143,24 @@ mod tests {
             Err(unexpected) => panic!("got a different error than expected: {:?}", unexpected),
         };
     }
+
+    #[test]
+    fn multiply_basic() {
+        let currency = Currency::new(Decimal::ONE, USD).unwrap();
+        let sum = currency.multiply(&Decimal::TWO);
+        assert_ok_eq(&Currency::new(Decimal::TWO, USD).unwrap(), &sum)
+    }
+
+    #[test]
+    fn multiply_causing_overflow() {
+        let currency = Currency::new(Decimal::MAX, USD).unwrap();
+        match currency.multiply(&Decimal::TWO) {
+            Ok(value) => panic!("expected error, but got {:?}", value),
+            Err(CurrencyError::Overflow { left, right, .. }) => {
+                assert_eq!(currency, left);
+                assert_eq!(Decimal::TWO, right);
+            }
+            Err(unexpected) => panic!("got a different error than expected: {:?}", unexpected),
+        };
+    }
 }
