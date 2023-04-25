@@ -29,11 +29,12 @@ pub fn get_summary_by_asset_class(
 }
 
 fn get_asset_class(lot: &Lot) -> AssetClass {
-    // todo: should not be hard-coded
-    // todo: a percentage of each symbol could be represented by a different asset class
+    // todo:
+    //   - update list with broader list of etfs from Vanguard, Shwab, iShares, etc.
+    //   - should not be hard-coded
+    //   - future: a percentage of each symbol could be represented by a different asset class
     let symbol = &lot.symbol;
     let asset_class = match &symbol.trim().to_ascii_uppercase()[..] {
-        // todo: update hard-coded list with broader list of etfs from Vanguard, Shwab, iShares, etc.
         "VOO" | "VTI" => AssetClass::UsStocks,
         "VEA" | "VEU" => AssetClass::IntlStocks,
 
