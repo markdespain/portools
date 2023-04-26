@@ -1,25 +1,25 @@
-use mongodb::bson::doc;
+use mongodb::bson::{Bson, doc};
 use mongodb::error::Error;
 use mongodb::options::FindOneAndReplaceOptions;
 use mongodb::{Client, Collection};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub type Id = u32;
-
-pub trait Record {
-    fn id(&self) -> Id;
+pub trait Record<I: Into<Bson>> {
+    fn id(&self) -> I;
 }
 
 const ID_FIELD: &str = "id";
 
-pub async fn upsert<T: Record + Serialize + DeserializeOwned>(
+pub async fn upsert<T, I>(
     client: &Client,
     database: &str,
     collection: &str,
     record: &T,
-) -> Result<(), Error> {
-    let filter = doc! {ID_FIELD: record.id()};
+) -> Result<(), Error>
+where T: Record<I> + Serialize + DeserializeOwned, I: Into<Bson>
+{
+    let filter = doc! {ID_FIELD: record.id().into()};
     let options = FindOneAndReplaceOptions::builder()
         .upsert(Some(true))
         .build();
@@ -33,14 +33,15 @@ pub async fn upsert<T: Record + Serialize + DeserializeOwned>(
     }
 }
 
-#[tracing::instrument(skip(client))]
-pub async fn find_by_id<T: Record + DeserializeOwned + Send + Sync + Unpin>(
+pub async fn find_by_id<T, I>(
     client: &Client,
     database: &str,
     collection: &str,
-    id: u32,
-) -> Result<Option<T>, Error> {
-    let filter = doc! {ID_FIELD: id};
+    id: I,
+) -> Result<Option<T>, Error>
+where T: Record<I> + DeserializeOwned + Send + Sync + Unpin, I : Into<Bson>
+{
+    let filter = doc! {ID_FIELD: id.into()};
     client
         .database(database)
         .collection(collection)

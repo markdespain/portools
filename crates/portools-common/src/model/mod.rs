@@ -4,7 +4,7 @@ pub use currency::*;
 mod lot;
 pub use lot::*;
 
-use mongo_util::record::{Id, Record};
+use mongo_util::record::{Record};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ use std::hash::Hash;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Portfolio {
-    pub id: Id,
+    pub id: u32,
     pub lots: Vec<Lot>,
 }
 
@@ -61,8 +61,9 @@ impl Portfolio {
     }
 }
 
-impl Record for Portfolio {
-    fn id(&self) -> Id {
+impl Record<u32> for Portfolio {
+
+    fn id(&self) -> u32 {
         self.id
     }
 }
@@ -107,12 +108,12 @@ pub enum GroupSummaryError {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PortfolioSummary<T: Hash + Eq> {
-    pub id: Id,
+    pub id: u32,
     pub group_to_summary: HashMap<T, GroupSummary>,
 }
 
-impl<T: Hash + Eq> Record for PortfolioSummary<T> {
-    fn id(&self) -> Id {
+impl<T: Hash + Eq> Record<u32> for PortfolioSummary<T> {
+    fn id(&self) -> u32{
         self.id
     }
 }
