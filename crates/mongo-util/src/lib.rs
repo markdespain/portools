@@ -1,4 +1,3 @@
 pub mod record;
-mod schema;
+pub mod schema;
 
-pub use schema::*;
