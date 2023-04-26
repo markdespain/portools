@@ -2,7 +2,6 @@ use crate::dao::Dao;
 use crate::model::{AssetClass, Portfolio, PortfolioSummary};
 use async_trait::async_trait;
 use mongo_util::record;
-use mongodb::bson::doc;
 use mongodb::error::Error;
 use mongodb::Client;
 use tracing;
@@ -24,18 +23,18 @@ impl MongoDao {
 
 #[async_trait]
 impl Dao for MongoDao {
+
+    #[tracing::instrument(
+    skip(self, portfolio),
+    fields(id = portfolio.id)
+    )]
     async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error> {
         record::upsert(&self.client, DB_NAME, COLL_PORTFOLIO, portfolio).await
     }
 
     #[tracing::instrument(skip(self))]
     async fn get_portfolio(&self, id: u32) -> Result<Option<Portfolio>, Error> {
-        let filter = doc! {"id": id};
-        self.client
-            .database(DB_NAME)
-            .collection(COLL_PORTFOLIO)
-            .find_one(filter, None)
-            .await
+        record::find_by_id(&self.client, DB_NAME, COLL_PORTFOLIO, id).await
     }
 
     async fn put_summary_by_asset_class(
