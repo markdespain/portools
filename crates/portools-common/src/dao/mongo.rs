@@ -1,5 +1,5 @@
 use crate::dao::Dao;
-use crate::model::{AssetClass, Portfolio, PortfolioSummary, Record};
+use crate::model::{AssetClass, Portfolio, PortfolioSummary};
 use async_trait::async_trait;
 use mongodb::bson::doc;
 use mongodb::error::Error;
@@ -8,6 +8,7 @@ use mongodb::{Client, Collection};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tracing;
+use mongo_util::Record;
 
 const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";

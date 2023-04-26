@@ -9,12 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-
-type Id = u32;
-
-pub trait Record {
-    fn id(&self) -> Id;
-}
+use mongo_util::{Id, Record};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Portfolio {
