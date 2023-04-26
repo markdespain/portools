@@ -1,14 +1,11 @@
 use crate::dao::Dao;
 use crate::model::{AssetClass, Portfolio, PortfolioSummary};
 use async_trait::async_trait;
+use mongo_util::record;
 use mongodb::bson::doc;
 use mongodb::error::Error;
-use mongodb::options::FindOneAndReplaceOptions;
-use mongodb::{Client, Collection};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use mongodb::Client;
 use tracing;
-use mongo_util::Record;
 
 const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
@@ -23,32 +20,12 @@ impl MongoDao {
     pub fn new(client: Client) -> MongoDao {
         MongoDao { client }
     }
-
-    #[tracing::instrument(
-    skip(self, item),
-    fields(id = item.id())
-    )]
-    async fn put<T: Record + Serialize + DeserializeOwned>(
-        &self,
-        collection: &str,
-        item: &T,
-    ) -> Result<(), Error> {
-        let filter = doc! {"id": item.id()};
-        let options = FindOneAndReplaceOptions::builder()
-            .upsert(Some(true))
-            .build();
-        let collection: Collection<T> = self.client.database(DB_NAME).collection::<T>(collection);
-        match collection.find_one_and_replace(filter, item, options).await {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
-        }
-    }
 }
 
 #[async_trait]
 impl Dao for MongoDao {
     async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error> {
-        self.put(COLL_PORTFOLIO, portfolio).await
+        record::put(&self.client, DB_NAME, COLL_PORTFOLIO, portfolio).await
     }
 
     #[tracing::instrument(skip(self))]
@@ -65,7 +42,7 @@ impl Dao for MongoDao {
         &self,
         asset_allocation: &PortfolioSummary<AssetClass>,
     ) -> Result<(), Error> {
-        self.put(COLL_ASSET_ALLOC, asset_allocation).await
+        record::put(&self.client, DB_NAME, COLL_ASSET_ALLOC, asset_allocation).await
     }
 }
 

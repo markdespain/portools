@@ -4,12 +4,12 @@ pub use currency::*;
 mod lot;
 pub use lot::*;
 
+use mongo_util::record::{Id, Record};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use mongo_util::{Id, Record};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Portfolio {
