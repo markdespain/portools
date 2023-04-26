@@ -5,6 +5,12 @@ use mongodb::{Client, Collection};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+/// Trait that for a struct that that be read from and written to a MongoDB collection
+///
+/// NOTE: Currently, structs implementing this trait should have a field named "id" for it's
+/// id field.  Otherwise, the record will be written to the collection without that field, which
+/// can cause issues with code assuming that field exists
+// todo(): how to address the above limitation?
 pub trait Record<I: Into<Bson>> {
     fn id(&self) -> I;
 }

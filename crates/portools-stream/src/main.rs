@@ -34,37 +34,34 @@ async fn main() {
     };
 
     while change_stream.is_alive() {
-        consume_next_change_event(&mut change_stream, &service).await;
-        change_stream::put_resume_token(
-            &client,
-            DB_NAME,
-            COLL_RESUME_TOKEN,
-            CHANGE_STREAM_ID,
-            change_stream.resume_token(),
-        )
-        .await
-        .unwrap_or_else(|error| {
-            tracing::error!(
-                %error,
-                "failed to persist new resume token")
-        });
+        match change_stream.next_if_any().await {
+            Ok(Some(event)) => {
+                consume_next_change_event(&event, &service).await;
+                let resume_token = change_stream.resume_token();
+                change_stream::put_resume_token(
+                    &client,
+                    DB_NAME,
+                    COLL_RESUME_TOKEN,
+                    CHANGE_STREAM_ID,
+                    &resume_token,
+                )
+                .await
+                .unwrap_or_else(
+                    |error| tracing::error!(%error, ?resume_token, "failed to persist new resume token"),
+                )
+            }
+            Ok(None) => {}
+            Err(error) => tracing::error!( %error, "got an error from the change stream"),
+        }
     }
     tracing::info!("change stream is no longer alive");
 }
 
 async fn consume_next_change_event(
-    change_stream: &mut ChangeStream<ChangeStreamEvent<Portfolio>>,
+    event: &ChangeStreamEvent<Portfolio>,
     allocation_service: &PortfolioSummaryManager,
 ) {
-    let event = change_stream.next_if_any().await.unwrap_or_else(|error| {
-        tracing::error!( %error, "got an error from the change stream");
-        None
-    });
-    if event.is_none() {
-        return;
-    }
     // todo: add tracing span with at least portfolio id
-    let event = event.unwrap();
     match event.operation_type {
         OperationType::Insert | OperationType::Replace => {
             if let Some(ref portfolio) = event.full_document {

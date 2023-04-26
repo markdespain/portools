@@ -5,16 +5,16 @@ use mongodb::error::Error;
 use mongodb::Client;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ResumeTokenRecord {
     // logical identifier for the change stream within an application
-    change_stream_id: String,
+    id: String,
     resume_token: Option<ResumeToken>,
 }
 
 impl Record<String> for ResumeTokenRecord {
     fn id(&self) -> String {
-        self.change_stream_id.clone()
+        self.id.clone()
     }
 }
 
@@ -23,11 +23,11 @@ pub async fn put_resume_token(
     database: &str,
     collection: &str,
     change_stream_id: &str,
-    resume_token: Option<ResumeToken>,
+    resume_token: &Option<ResumeToken>,
 ) -> Result<(), Error> {
     let record = ResumeTokenRecord {
-        change_stream_id: change_stream_id.into(),
-        resume_token,
+        id: change_stream_id.into(),
+        resume_token: resume_token.clone(),
     };
     record::upsert(client, database, collection, &record).await
 }
@@ -40,7 +40,7 @@ pub async fn get_resume_token(
 ) -> Result<Option<ResumeToken>, Error> {
     match record::find_by_id(client, database, collection, change_stream_id.to_string()).await {
         Ok(Some(ResumeTokenRecord {
-            change_stream_id: _,
+            id: _,
             resume_token,
         })) => Ok(resume_token),
         Ok(None) => Ok(None),
