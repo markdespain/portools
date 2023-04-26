@@ -1,6 +1,6 @@
 use mongodb::bson::{Bson, doc};
 use mongodb::error::Error;
-use mongodb::options::FindOneAndReplaceOptions;
+use mongodb::options::{FindOneAndReplaceOptions, FindOneOptions, ReadConcern, WriteConcern};
 use mongodb::{Client, Collection};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -22,6 +22,7 @@ where T: Record<I> + Serialize + DeserializeOwned, I: Into<Bson>
     let filter = doc! {ID_FIELD: record.id().into()};
     let options = FindOneAndReplaceOptions::builder()
         .upsert(Some(true))
+        .write_concern(Some(WriteConcern::MAJORITY))
         .build();
     let collection: Collection<T> = client.database(database).collection::<T>(collection);
     match collection
@@ -42,9 +43,12 @@ pub async fn find_by_id<T, I>(
 where T: Record<I> + DeserializeOwned + Send + Sync + Unpin, I : Into<Bson>
 {
     let filter = doc! {ID_FIELD: id.into()};
+    let options = FindOneOptions::builder()
+        .read_concern(Some(ReadConcern::MAJORITY))
+        .build();
     client
         .database(database)
         .collection(collection)
-        .find_one(filter, None)
+        .find_one(filter, Some(options))
         .await
 }

@@ -14,7 +14,7 @@ either restrict to a single currency for now, or implement support for Portfolio
 - allow a symbol to map to multiple asset classes.  i.e. a percentage of each symbol could be represented
   by a different asset class
 
-implement timeouts / cancellation
+implement timeouts for Mongo interactions
 https://docs.rs/mongodb/2.4.0/mongodb/#warning-about-timeouts--cancellation
 
 apply reasonable, configurable limits to the Lot values
