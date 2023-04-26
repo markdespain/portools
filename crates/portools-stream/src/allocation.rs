@@ -2,11 +2,11 @@ use mongodb::error::Error;
 use portools_common::dao::Dao;
 use portools_common::model::{AssetClass, Lot, Portfolio, PortfolioSummary, PortfolioSummaryError};
 
-pub struct AllocationService {
+pub struct PortfolioSummaryManager {
     pub dao: Box<dyn Dao>,
 }
 
-impl AllocationService {
+impl PortfolioSummaryManager {
     // todo(): integration test coverage
     pub async fn put_summary_by_asset_class(
         &self,

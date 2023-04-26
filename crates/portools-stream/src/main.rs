@@ -1,6 +1,6 @@
-use allocation::AllocationService;
+use allocation::PortfolioSummaryManager;
 use mongo_util::change_stream;
-use mongodb::change_stream::event::{ChangeStreamEvent, OperationType, ResumeToken};
+use mongodb::change_stream::event::{ChangeStreamEvent, OperationType};
 use mongodb::change_stream::ChangeStream;
 use mongodb::options::{
     ChangeStreamOptions, FullDocumentBeforeChangeType, FullDocumentType, ReadConcern,
@@ -25,28 +25,22 @@ async fn main() {
         .await
         .unwrap_or_else(|error| panic!("failed to connect to {uri}. error: {error}"));
 
-    let mut resume_token =
-        change_stream::get_resume_token(&client, DB_NAME, COLL_RESUME_TOKEN, CHANGE_STREAM_ID)
-            .await
-            .unwrap_or_else(|error| panic!("failed to get initial resume token. error: {error}"));
-
-    let mut change_stream = init_change_stream(&client, resume_token)
+    let mut change_stream = init_change_stream(&client)
         .await
         .unwrap_or_else(|error| panic!("failed to initialize change stream stream: {error}"));
 
-    let service = AllocationService {
+    let service = PortfolioSummaryManager {
         dao: Box::new(MongoDao::new(client.clone())),
     };
 
     while change_stream.is_alive() {
         consume_next_change_event(&mut change_stream, &service).await;
-        resume_token = change_stream.resume_token();
         change_stream::put_resume_token(
             &client,
             DB_NAME,
             COLL_RESUME_TOKEN,
             CHANGE_STREAM_ID,
-            resume_token,
+            change_stream.resume_token(),
         )
         .await
         .unwrap_or_else(|error| {
@@ -60,7 +54,7 @@ async fn main() {
 
 async fn consume_next_change_event(
     change_stream: &mut ChangeStream<ChangeStreamEvent<Portfolio>>,
-    allocation_service: &AllocationService,
+    allocation_service: &PortfolioSummaryManager,
 ) {
     let event = change_stream.next_if_any().await.unwrap_or_else(|error| {
         tracing::error!( %error, "got an error from the change stream");
@@ -94,8 +88,18 @@ async fn consume_next_change_event(
 
 async fn init_change_stream(
     client: &Client,
-    resume_token: Option<ResumeToken>,
 ) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
+    change_stream::create_collections_and_indexes(&client, DB_NAME, COLL_RESUME_TOKEN)
+        .await
+        .unwrap_or_else(|error| {
+            panic!("should be able create collections and indexes. error: {error}")
+        });
+
+    let resume_token =
+        change_stream::get_resume_token(&client, DB_NAME, COLL_RESUME_TOKEN, CHANGE_STREAM_ID)
+            .await
+            .unwrap_or_else(|error| panic!("failed to get initial resume token. error: {error}"));
+
     let options: ChangeStreamOptions = ChangeStreamOptions::builder()
         .full_document(Some(FullDocumentType::UpdateLookup))
         .full_document_before_change(Some(FullDocumentBeforeChangeType::Off))
