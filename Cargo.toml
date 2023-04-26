@@ -6,7 +6,8 @@ actix-web = { version = "4.3.1", default-features = false, features = ["macros"]
 async-trait = { version = "0.1.68", default-features = false }
 chrono = { version = "0.4.24", default-features = false, features = ["serde"] }
 mongodb = { version = "2.5.0", default-features = false }
+mongodm = { version = "0.9.1", default-features = false, features = ["tokio-runtime"] }
 rust_decimal = { version="1.29.1", default-features = false, features = ["serde-float"] }
 rusty-money = { version ="0.4.1", default-features = false, features = ["iso"] }
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
-tracing = { version = "0.1.37", default-features = false }
+tracing = { version = "0.1.38", default-features = false }

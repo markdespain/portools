@@ -13,6 +13,7 @@ rust_decimal = { workspace = true }
 rusty-money = { workspace = true }
 serde = { workspace = true }
 mongodb = { workspace = true, features = ["tokio-runtime"] }
+mongodm = { workspace = true }
 tracing = { workspace = true }
 tracing-bunyan-formatter = "0.3.7"
 tracing-log = { version = "0.1.3", default-features = false }

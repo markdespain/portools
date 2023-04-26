@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 mongodb = { workspace = true }
+mongodm = { workspace = true }
 serde = { workspace = true }
 tracing = { workspace = true, features = ["attributes"] }

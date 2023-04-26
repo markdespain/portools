@@ -5,9 +5,15 @@ use mongo_util::record;
 use mongodb::error::Error;
 use mongodb::Client;
 
+use mongodm::{ToRepository, Model, CollectionConfig, Indexes, Index, IndexOption, sync_indexes};
+use mongodm::mongo::{options::ClientOptions, bson::doc};
+use serde::{Serialize, Deserialize};
+use std::borrow::Cow;
+use mongodm::field;
+
 pub const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
-const COLL_ASSET_ALLOC: &str = "portfolio_by_asset_class";
+const COLL_PORTFOLIO_BY_ASSET_CLASS: &str = "portfolio_by_asset_class";
 
 #[derive(Clone, Debug)]
 pub struct MongoDao {
@@ -34,7 +40,7 @@ impl Dao for MongoDao {
         &self,
         asset_allocation: &PortfolioSummary<AssetClass>,
     ) -> Result<(), Error> {
-        record::upsert(&self.client, DB_NAME, COLL_ASSET_ALLOC, asset_allocation).await
+        record::upsert(&self.client, DB_NAME, COLL_PORTFOLIO_BY_ASSET_CLASS, asset_allocation).await
     }
 }
 
@@ -44,22 +50,41 @@ pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<
     record::drop_and_create_collection_and_index::<u32, PortfolioSummary<AssetClass>>(
         client,
         DB_NAME,
-        COLL_ASSET_ALLOC,
+        COLL_PORTFOLIO_BY_ASSET_CLASS,
     )
     .await
 }
 
-pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error> {
-    record::create_collection_and_index_if_not_exist::<u32, Portfolio>(
-        client,
-        DB_NAME,
-        COLL_PORTFOLIO,
-    )
-    .await?;
-    record::create_collection_and_index_if_not_exist::<u32, PortfolioSummary<AssetClass>>(
-        client,
-        DB_NAME,
-        COLL_ASSET_ALLOC,
-    )
-    .await
+pub struct PortfolioCollConf;
+impl CollectionConfig for PortfolioCollConf {
+    fn collection_name() -> &'static str { COLL_PORTFOLIO }
+
+    fn indexes() -> Indexes {
+        Indexes::new()
+            .with(Index::new(field!(id in PortfolioSummary<AssetClass>)).with_option(IndexOption::Unique))
+    }
 }
+impl Model for Portfolio {
+    type CollConf = PortfolioCollConf;
+}
+
+pub struct PortfolioByAssetClassCollConf;
+impl CollectionConfig for PortfolioByAssetClassCollConf {
+    fn collection_name() -> &'static str { COLL_PORTFOLIO_BY_ASSET_CLASS }
+
+    fn indexes() -> Indexes {
+        Indexes::new()
+            .with(Index::new(field!(id in PortfolioSummary<AssetClass>)).with_option(IndexOption::Unique))
+    }
+}
+impl Model for PortfolioSummary<AssetClass> {
+    type CollConf = PortfolioByAssetClassCollConf;
+}
+
+pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error> {
+    let db = client.database(DB_NAME);
+    sync_indexes::<PortfolioCollConf>(&db).await?;
+    sync_indexes::<PortfolioByAssetClassCollConf>(&db).await
+}
+
+

@@ -1,5 +1,4 @@
 use allocation::PortfolioSummaryManager;
-use mongo_util::change_stream;
 use mongodb::change_stream::event::{ChangeStreamEvent, OperationType};
 use mongodb::change_stream::ChangeStream;
 use mongodb::options::{
@@ -9,11 +8,10 @@ use mongodb::Client;
 use portools_common::dao::mongo::{MongoDao, DB_NAME};
 use portools_common::log;
 use portools_common::model::Portfolio;
-use portools_stream::allocation;
+use portools_stream::{allocation, change_stream};
 
 const APP_NAME: &str = "portools-stream";
 const COLL_PORTFOLIO: &str = "portfolio";
-const COLL_RESUME_TOKEN: &str = "resume_token";
 const CHANGE_STREAM_ID: &str = APP_NAME;
 
 #[tokio::main]
@@ -41,9 +39,7 @@ async fn main() {
                 change_stream::put_resume_token(
                     &client,
                     DB_NAME,
-                    COLL_RESUME_TOKEN,
-                    CHANGE_STREAM_ID,
-                    &resume_token,
+                    &resume_token
                 )
                 .await
                 .unwrap_or_else(
@@ -86,14 +82,14 @@ async fn consume_next_change_event(
 async fn init_change_stream(
     client: &Client,
 ) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
-    change_stream::create_collections_and_indexes(&client, DB_NAME, COLL_RESUME_TOKEN)
+    change_stream::create_collections_and_indexes(&client)
         .await
         .unwrap_or_else(|error| {
             panic!("should be able create collections and indexes. error: {error}")
         });
 
     let resume_token =
-        change_stream::get_resume_token(&client, DB_NAME, COLL_RESUME_TOKEN, CHANGE_STREAM_ID)
+        change_stream::get_resume_token(&client, CHANGE_STREAM_ID)
             .await
             .unwrap_or_else(|error| panic!("failed to get initial resume token. error: {error}"));
 
