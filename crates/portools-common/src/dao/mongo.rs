@@ -25,7 +25,7 @@ impl MongoDao {
 #[async_trait]
 impl Dao for MongoDao {
     async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error> {
-        record::put(&self.client, DB_NAME, COLL_PORTFOLIO, portfolio).await
+        record::upsert(&self.client, DB_NAME, COLL_PORTFOLIO, portfolio).await
     }
 
     #[tracing::instrument(skip(self))]
@@ -42,7 +42,7 @@ impl Dao for MongoDao {
         &self,
         asset_allocation: &PortfolioSummary<AssetClass>,
     ) -> Result<(), Error> {
-        record::put(&self.client, DB_NAME, COLL_ASSET_ALLOC, asset_allocation).await
+        record::upsert(&self.client, DB_NAME, COLL_ASSET_ALLOC, asset_allocation).await
     }
 }
 

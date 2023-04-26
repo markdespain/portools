@@ -15,7 +15,7 @@ pub trait Record {
 skip(client, record),
 fields(id = record.id())
 )]
-pub async fn put<T: Record + Serialize + DeserializeOwned>(
+pub async fn upsert<T: Record + Serialize + DeserializeOwned>(
     client: &Client,
     database: &str,
     collection: &str,
