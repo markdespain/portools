@@ -14,7 +14,7 @@ portools-common = { path = "../portools-common" }
 rust_decimal = { workspace = true }
 rusty-money = { workspace = true }
 serde = { workspace = true }
-tokio = { version = "1.27.0", default-features = false }
+tokio = { version = "1.28.0", default-features = false }
 tracing = { workspace = true }
 
 [dev-dependencies]
