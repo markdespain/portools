@@ -1,4 +1,4 @@
-use mongodb::bson::{Bson, doc};
+use mongodb::bson::{doc, Bson};
 use mongodb::error::Error;
 use mongodb::options::{FindOneAndReplaceOptions, FindOneOptions, ReadConcern, WriteConcern};
 use mongodb::{Client, Collection};
@@ -17,7 +17,9 @@ pub async fn upsert<T, I>(
     collection: &str,
     record: &T,
 ) -> Result<(), Error>
-where T: Record<I> + Serialize + DeserializeOwned, I: Into<Bson>
+where
+    T: Record<I> + Serialize + DeserializeOwned,
+    I: Into<Bson>,
 {
     let filter = doc! {ID_FIELD: record.id().into()};
     let options = FindOneAndReplaceOptions::builder()
@@ -40,7 +42,9 @@ pub async fn find_by_id<T, I>(
     collection: &str,
     id: I,
 ) -> Result<Option<T>, Error>
-where T: Record<I> + DeserializeOwned + Send + Sync + Unpin, I : Into<Bson>
+where
+    T: Record<I> + DeserializeOwned + Send + Sync + Unpin,
+    I: Into<Bson>,
 {
     let filter = doc! {ID_FIELD: id.into()};
     let options = FindOneOptions::builder()

@@ -4,7 +4,7 @@ pub use currency::*;
 mod lot;
 pub use lot::*;
 
-use mongo_util::record::{Record};
+use mongo_util::record::Record;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -62,7 +62,6 @@ impl Portfolio {
 }
 
 impl Record<u32> for Portfolio {
-
     fn id(&self) -> u32 {
         self.id
     }
@@ -113,7 +112,7 @@ pub struct PortfolioSummary<T: Hash + Eq> {
 }
 
 impl<T: Hash + Eq> Record<u32> for PortfolioSummary<T> {
-    fn id(&self) -> u32{
+    fn id(&self) -> u32 {
         self.id
     }
 }

@@ -4,9 +4,8 @@ use async_trait::async_trait;
 use mongo_util::{record, schema};
 use mongodb::error::Error;
 use mongodb::Client;
-use tracing;
 
-const DB_NAME: &str = "portools";
+pub const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
 const COLL_ASSET_ALLOC: &str = "portfolio_by_asset_class";
 
@@ -23,16 +22,10 @@ impl MongoDao {
 
 #[async_trait]
 impl Dao for MongoDao {
-
-    #[tracing::instrument(
-    skip(self, portfolio),
-    fields(id = portfolio.id)
-    )]
     async fn put_portfolio(&self, portfolio: &Portfolio) -> Result<(), Error> {
         record::upsert(&self.client, DB_NAME, COLL_PORTFOLIO, portfolio).await
     }
 
-    #[tracing::instrument(skip(self))]
     async fn get_portfolio(&self, id: u32) -> Result<Option<Portfolio>, Error> {
         record::find_by_id(&self.client, DB_NAME, COLL_PORTFOLIO, id).await
     }
@@ -45,7 +38,6 @@ impl Dao for MongoDao {
     }
 }
 
-#[tracing::instrument(skip(client))]
 pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<(), Error> {
     schema::drop_and_create_collection_and_index::<Portfolio>(client, DB_NAME, COLL_PORTFOLIO)
         .await?;
@@ -57,14 +49,9 @@ pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<
     .await
 }
 
-#[tracing::instrument(skip(client))]
 pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error> {
-    schema::create_collection_and_index_if_not_exist::<Portfolio>(
-        client,
-        DB_NAME,
-        COLL_PORTFOLIO,
-    )
-    .await?;
+    schema::create_collection_and_index_if_not_exist::<Portfolio>(client, DB_NAME, COLL_PORTFOLIO)
+        .await?;
     schema::create_collection_and_index_if_not_exist::<PortfolioSummary<AssetClass>>(
         client,
         DB_NAME,

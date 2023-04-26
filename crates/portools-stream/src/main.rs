@@ -1,18 +1,20 @@
 use allocation::AllocationService;
-use mongodb::change_stream::event::{ChangeStreamEvent, OperationType};
+use mongo_util::change_stream;
+use mongodb::change_stream::event::{ChangeStreamEvent, OperationType, ResumeToken};
 use mongodb::change_stream::ChangeStream;
 use mongodb::options::{
     ChangeStreamOptions, FullDocumentBeforeChangeType, FullDocumentType, ReadConcern,
 };
 use mongodb::Client;
-use portools_common::dao::mongo::MongoDao;
+use portools_common::dao::mongo::{MongoDao, DB_NAME};
 use portools_common::log;
 use portools_common::model::Portfolio;
 use portools_stream::allocation;
 
 const APP_NAME: &str = "portools-stream";
-const DB_NAME: &str = "portools";
 const COLL_PORTFOLIO: &str = "portfolio";
+const COLL_RESUME_TOKEN: &str = "resume_token";
+const CHANGE_STREAM_ID: &str = APP_NAME;
 
 #[tokio::main]
 async fn main() {
@@ -21,20 +23,37 @@ async fn main() {
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
     let client = Client::with_uri_str(&uri)
         .await
-        .unwrap_or_else(|_| panic!("should be able to connect to {}", uri));
+        .unwrap_or_else(|error| panic!("failed to connect to {uri}. error: {error}"));
 
-    let mut change_stream = init_change_stream(&client)
+    let mut resume_token =
+        change_stream::get_resume_token(&client, DB_NAME, COLL_RESUME_TOKEN, CHANGE_STREAM_ID)
+            .await
+            .unwrap_or_else(|error| panic!("failed to get initial resume token. error: {error}"));
+
+    let mut change_stream = init_change_stream(&client, resume_token)
         .await
-        .unwrap_or_else(|e| panic!("failed to initialize change stream stream: {e}"));
+        .unwrap_or_else(|error| panic!("failed to initialize change stream stream: {error}"));
 
     let service = AllocationService {
-        dao: Box::new(MongoDao::new(client)),
+        dao: Box::new(MongoDao::new(client.clone())),
     };
 
-    //let mut resume_token = None;
     while change_stream.is_alive() {
         consume_next_change_event(&mut change_stream, &service).await;
-        //resume_token = change_stream.resume_token();
+        resume_token = change_stream.resume_token();
+        change_stream::put_resume_token(
+            &client,
+            DB_NAME,
+            COLL_RESUME_TOKEN,
+            CHANGE_STREAM_ID,
+            resume_token,
+        )
+        .await
+        .unwrap_or_else(|error| {
+            tracing::error!(
+                %error,
+                "failed to persist new resume token")
+        });
     }
     tracing::info!("change stream is no longer alive");
 }
@@ -75,17 +94,18 @@ async fn consume_next_change_event(
 
 async fn init_change_stream(
     client: &Client,
+    resume_token: Option<ResumeToken>,
 ) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
-    // todo(): handle resume token saving and provide to change_stream_options on init
-    let change_stream_options: ChangeStreamOptions = ChangeStreamOptions::builder()
+    let options: ChangeStreamOptions = ChangeStreamOptions::builder()
         .full_document(Some(FullDocumentType::UpdateLookup))
         .full_document_before_change(Some(FullDocumentBeforeChangeType::Off))
         .read_concern(Some(ReadConcern::MAJORITY))
+        .resume_after(resume_token)
         .build();
 
     client
         .database(DB_NAME)
         .collection::<Portfolio>(COLL_PORTFOLIO)
-        .watch(None, Some(change_stream_options))
+        .watch(None, Some(options))
         .await
 }
