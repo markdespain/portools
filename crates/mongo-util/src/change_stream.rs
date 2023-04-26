@@ -1,5 +1,5 @@
+use crate::record;
 use crate::record::Record;
-use crate::{record, schema};
 use mongodb::change_stream::event::ResumeToken;
 use mongodb::error::Error;
 use mongodb::Client;
@@ -53,7 +53,7 @@ pub async fn create_collections_and_indexes(
     database: &str,
     collection: &str,
 ) -> Result<(), Error> {
-    schema::create_collection_and_index_if_not_exist::<ResumeTokenRecord>(
+    record::create_collection_and_index_if_not_exist::<String, ResumeTokenRecord>(
         client, database, collection,
     )
     .await

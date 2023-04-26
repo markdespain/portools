@@ -10,7 +10,7 @@ use serde::Serialize;
 /// NOTE: Currently, structs implementing this trait should have a field named "id" for it's
 /// id field.  Otherwise, the record will be written to the collection without that field, which
 /// can cause issues with code assuming that field exists
-// todo(): how to address the above limitation?
+// todo(): how to address the above limitation? macro?
 pub trait Record<I: Into<Bson>> {
     fn id(&self) -> I;
 }
@@ -61,4 +61,36 @@ where
         .collection(collection)
         .find_one(filter, Some(options))
         .await
+}
+
+pub async fn create_collection_and_index_if_not_exist<I, R>(
+    client: &Client,
+    database: &str,
+    collection: &str,
+) -> Result<(), Error>
+where
+    I: Into<Bson>,
+    R: Record<I>,
+{
+    let index = format!("{}_index", collection);
+    crate::schema::create_collection_if_not_exists::<R>(client, database, collection).await?;
+    crate::schema::create_index_if_not_exists::<R>(client, database, collection, &index, ID_FIELD)
+        .await
+}
+
+pub async fn drop_and_create_collection_and_index<I, R>(
+    client: &Client,
+    database: &str,
+    collection: &str,
+) -> Result<(), Error>
+where
+    I: Into<Bson>,
+    R: Record<I>,
+{
+    client
+        .database(database)
+        .collection::<R>(collection)
+        .drop(None)
+        .await?;
+    create_collection_and_index_if_not_exist::<I, R>(client, database, collection).await
 }

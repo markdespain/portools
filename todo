@@ -1,3 +1,5 @@
+replace "record" with ODM library
+
 job to look up and persist symbol prices
 
 implement struct getters in order to preserve invariants

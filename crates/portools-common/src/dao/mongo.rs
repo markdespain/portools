@@ -1,7 +1,7 @@
 use crate::dao::Dao;
 use crate::model::{AssetClass, Portfolio, PortfolioSummary};
 use async_trait::async_trait;
-use mongo_util::{record, schema};
+use mongo_util::record;
 use mongodb::error::Error;
 use mongodb::Client;
 
@@ -39,9 +39,9 @@ impl Dao for MongoDao {
 }
 
 pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<(), Error> {
-    schema::drop_and_create_collection_and_index::<Portfolio>(client, DB_NAME, COLL_PORTFOLIO)
+    record::drop_and_create_collection_and_index::<u32, Portfolio>(client, DB_NAME, COLL_PORTFOLIO)
         .await?;
-    schema::drop_and_create_collection_and_index::<PortfolioSummary<AssetClass>>(
+    record::drop_and_create_collection_and_index::<u32, PortfolioSummary<AssetClass>>(
         client,
         DB_NAME,
         COLL_ASSET_ALLOC,
@@ -50,9 +50,13 @@ pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<
 }
 
 pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error> {
-    schema::create_collection_and_index_if_not_exist::<Portfolio>(client, DB_NAME, COLL_PORTFOLIO)
-        .await?;
-    schema::create_collection_and_index_if_not_exist::<PortfolioSummary<AssetClass>>(
+    record::create_collection_and_index_if_not_exist::<u32, Portfolio>(
+        client,
+        DB_NAME,
+        COLL_PORTFOLIO,
+    )
+    .await?;
+    record::create_collection_and_index_if_not_exist::<u32, PortfolioSummary<AssetClass>>(
         client,
         DB_NAME,
         COLL_ASSET_ALLOC,
