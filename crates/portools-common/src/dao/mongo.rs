@@ -71,7 +71,9 @@ impl CollectionConfig for PortfolioConfig {
 impl Model for Portfolio {
     type CollConf = PortfolioConfig;
 }
-impl Record<u32> for Portfolio {
+impl Record for Portfolio {
+    type IdType = u32;
+
     fn id_field() -> &'static str {
         field!(id in Portfolio)
     }
@@ -97,7 +99,10 @@ impl Model for PortfolioSummary<AssetClass> {
     type CollConf = PortfolioByAssetClassConfig;
 }
 
-impl Record<u32> for PortfolioSummary<AssetClass> {
+impl Record for PortfolioSummary<AssetClass> {
+
+    type IdType = u32;
+
     fn id_field() -> &'static str {
         field!(id in PortfolioSummary<AssetClass>)
     }

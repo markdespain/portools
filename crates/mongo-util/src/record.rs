@@ -4,10 +4,12 @@ use mongodb::options::{FindOneAndReplaceOptions, FindOneOptions, ReadConcern, Wr
 use mongodb::Database;
 use mongodm::{sync_indexes, CollectionConfig, Model, ToRepository};
 
-pub trait Record<I>: Model {
+pub trait Record : Model {
+    type IdType : Into<Bson>;
+
     fn id_field() -> &'static str;
 
-    fn id(record: &Self) -> I;
+    fn id(record: &Self) -> Self::IdType;
 }
 
 pub async fn drop_and_create<M: Model>(db: &Database) -> Result<(), Error> {
@@ -17,10 +19,9 @@ pub async fn drop_and_create<M: Model>(db: &Database) -> Result<(), Error> {
     sync_indexes::<M::CollConf>(db).await
 }
 
-pub async fn upsert<R, I>(database: &Database, record: &R) -> Result<(), Error>
+pub async fn upsert<R>(database: &Database, record: &R) -> Result<(), Error>
 where
-    R: Record<I>,
-    I: Into<Bson>,
+    R: Record
 {
     let filter = doc! { R::id_field() : R::id(record).into() };
     let options = FindOneAndReplaceOptions::builder()
@@ -37,10 +38,9 @@ where
     }
 }
 
-pub async fn find_by_id<R, I>(database: &Database, id: I) -> Result<Option<R>, Error>
+pub async fn find_by_id<R>(database: &Database, id: R::IdType) -> Result<Option<R>, Error>
 where
-    R: Record<I> + Send + Sync,
-    I: Into<Bson>,
+    R: Record + Send + Sync,
 {
     let filter = doc! { R::id_field() : id.into() };
     let options = FindOneOptions::builder()

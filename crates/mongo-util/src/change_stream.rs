@@ -19,7 +19,9 @@ impl Model for ResumeTokenRecord {
     type CollConf = ResumeTokenRecordConfig;
 }
 
-impl Record<String> for ResumeTokenRecord {
+impl Record for ResumeTokenRecord {
+    type IdType = String;
+
     fn id_field() -> &'static str {
         field!(id in ResumeTokenRecord)
     }
