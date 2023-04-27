@@ -1028,6 +1028,7 @@ name = "mongo-util"
 version = "0.1.0"
 dependencies = [
  "mongodb",
+ "mongodm",
  "serde",
  "tracing",
 ]
@@ -1077,6 +1078,19 @@ dependencies = [
  "typed-builder",
  "uuid",
  "webpki-roots",
+]
+
+[[package]]
+name = "mongodm"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29b215348ca7efa342a561d66c9dc21334721d9a9bd484fd7444b1045977b894"
+dependencies = [
+ "async-trait",
+ "futures-core",
+ "futures-util",
+ "mongodb",
+ "serde",
 ]
 
 [[package]]
@@ -1198,6 +1212,7 @@ dependencies = [
  "chrono",
  "mongo-util",
  "mongodb",
+ "mongodm",
  "rust_decimal",
  "rusty-money",
  "serde",
@@ -1237,6 +1252,7 @@ dependencies = [
  "chrono",
  "mongo-util",
  "mongodb",
+ "mongodm",
  "portools-common",
  "rust_decimal",
  "rusty-money",

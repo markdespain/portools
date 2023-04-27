@@ -1,9 +1,13 @@
+use crate::mongodm::TypedCollectionConfig;
 use crate::record;
 use crate::record::Record;
 use mongodb::change_stream::event::ResumeToken;
 use mongodb::error::Error;
-use mongodb::Client;
+use mongodb::{Client, Database};
+use mongodm::{field, sync_indexes, CollectionConfig, Index, IndexOption, Indexes};
 use serde::{Deserialize, Serialize};
+
+pub const COLL_RESUME_TOKEN: &str = "resume_token";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ResumeTokenRecord {
@@ -17,6 +21,20 @@ impl Record<String> for ResumeTokenRecord {
         self.id.clone()
     }
 }
+
+struct ResumeTokenRecordConfig;
+impl CollectionConfig for ResumeTokenRecordConfig {
+    fn collection_name() -> &'static str {
+        COLL_RESUME_TOKEN
+    }
+
+    fn indexes() -> Indexes {
+        Indexes::new()
+            .with(Index::new(field!(id in ResumeTokenRecord)).with_option(IndexOption::Unique))
+        // field! macro can be used as well
+    }
+}
+impl TypedCollectionConfig<ResumeToken> for ResumeTokenRecordConfig {}
 
 pub async fn put_resume_token(
     client: &Client,
@@ -48,13 +66,6 @@ pub async fn get_resume_token(
     }
 }
 
-pub async fn create_collections_and_indexes(
-    client: &Client,
-    database: &str,
-    collection: &str,
-) -> Result<(), Error> {
-    record::create_collection_and_index_if_not_exist::<String, ResumeTokenRecord>(
-        client, database, collection,
-    )
-    .await
+pub async fn sync_collections_and_indexes(db: &Database) -> Result<(), Error> {
+    sync_indexes::<ResumeTokenRecordConfig>(&db).await
 }

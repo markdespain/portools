@@ -1,5 +1,6 @@
 use allocation::PortfolioSummaryManager;
 use mongo_util::change_stream;
+use mongo_util::change_stream::COLL_RESUME_TOKEN;
 use mongodb::change_stream::event::{ChangeStreamEvent, OperationType};
 use mongodb::change_stream::ChangeStream;
 use mongodb::options::{
@@ -13,7 +14,6 @@ use portools_stream::allocation;
 
 const APP_NAME: &str = "portools-stream";
 const COLL_PORTFOLIO: &str = "portfolio";
-const COLL_RESUME_TOKEN: &str = "resume_token";
 const CHANGE_STREAM_ID: &str = APP_NAME;
 
 #[tokio::main]
@@ -86,7 +86,7 @@ async fn consume_next_change_event(
 async fn init_change_stream(
     client: &Client,
 ) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
-    change_stream::create_collections_and_indexes(&client, DB_NAME, COLL_RESUME_TOKEN)
+    change_stream::sync_collections_and_indexes(&client.database(DB_NAME))
         .await
         .unwrap_or_else(|error| {
             panic!("should be able create collections and indexes. error: {error}")
