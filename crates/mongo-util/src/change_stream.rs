@@ -1,10 +1,9 @@
-use crate::mongodm::TypedCollectionConfig;
 use crate::record;
 use crate::record::Record;
 use mongodb::change_stream::event::ResumeToken;
 use mongodb::error::Error;
-use mongodb::{Client, Database};
-use mongodm::{field, sync_indexes, CollectionConfig, Index, IndexOption, Indexes};
+use mongodb::Database;
+use mongodm::{field, sync_indexes, CollectionConfig, Index, IndexOption, Indexes, Model};
 use serde::{Deserialize, Serialize};
 
 pub const COLL_RESUME_TOKEN: &str = "resume_token";
@@ -16,9 +15,17 @@ struct ResumeTokenRecord {
     resume_token: Option<ResumeToken>,
 }
 
+impl Model for ResumeTokenRecord {
+    type CollConf = ResumeTokenRecordConfig;
+}
+
 impl Record<String> for ResumeTokenRecord {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id_field() -> &'static str {
+        field!(id in ResumeTokenRecord)
+    }
+
+    fn id(record: &Self) -> String {
+        record.id.clone()
     }
 }
 
@@ -34,12 +41,9 @@ impl CollectionConfig for ResumeTokenRecordConfig {
         // field! macro can be used as well
     }
 }
-impl TypedCollectionConfig<ResumeToken> for ResumeTokenRecordConfig {}
 
 pub async fn put_resume_token(
-    client: &Client,
-    database: &str,
-    collection: &str,
+    database: &Database,
     change_stream_id: &str,
     resume_token: &Option<ResumeToken>,
 ) -> Result<(), Error> {
@@ -47,16 +51,14 @@ pub async fn put_resume_token(
         id: change_stream_id.into(),
         resume_token: resume_token.clone(),
     };
-    record::upsert(client, database, collection, &record).await
+    record::upsert(database, &record).await
 }
 
 pub async fn get_resume_token(
-    client: &Client,
-    database: &str,
-    collection: &str,
+    database: &Database,
     change_stream_id: &str,
 ) -> Result<Option<ResumeToken>, Error> {
-    match record::find_by_id(client, database, collection, change_stream_id.to_string()).await {
+    match record::find_by_id(database, change_stream_id.to_string()).await {
         Ok(Some(ResumeTokenRecord {
             id: _,
             resume_token,
@@ -67,5 +69,5 @@ pub async fn get_resume_token(
 }
 
 pub async fn sync_collections_and_indexes(db: &Database) -> Result<(), Error> {
-    sync_indexes::<ResumeTokenRecordConfig>(&db).await
+    sync_indexes::<ResumeTokenRecordConfig>(db).await
 }

@@ -1,6 +1,5 @@
 use allocation::PortfolioSummaryManager;
 use mongo_util::change_stream;
-use mongo_util::change_stream::COLL_RESUME_TOKEN;
 use mongodb::change_stream::event::{ChangeStreamEvent, OperationType};
 use mongodb::change_stream::ChangeStream;
 use mongodb::options::{
@@ -33,15 +32,14 @@ async fn main() {
         dao: Box::new(MongoDao::new(client.clone())),
     };
 
+    let database = &client.database(DB_NAME);
     while change_stream.is_alive() {
         match change_stream.next_if_any().await {
             Ok(Some(event)) => {
                 consume_next_change_event(&event, &service).await;
                 let resume_token = change_stream.resume_token();
                 change_stream::put_resume_token(
-                    &client,
-                    DB_NAME,
-                    COLL_RESUME_TOKEN,
+                    database,
                     CHANGE_STREAM_ID,
                     &resume_token,
                 )
@@ -86,16 +84,16 @@ async fn consume_next_change_event(
 async fn init_change_stream(
     client: &Client,
 ) -> mongodb::error::Result<ChangeStream<ChangeStreamEvent<Portfolio>>> {
-    change_stream::sync_collections_and_indexes(&client.database(DB_NAME))
+    let database = &client.database(DB_NAME);
+    change_stream::sync_collections_and_indexes(database)
         .await
         .unwrap_or_else(|error| {
             panic!("should be able create collections and indexes. error: {error}")
         });
 
-    let resume_token =
-        change_stream::get_resume_token(&client, DB_NAME, COLL_RESUME_TOKEN, CHANGE_STREAM_ID)
-            .await
-            .unwrap_or_else(|error| panic!("failed to get initial resume token. error: {error}"));
+    let resume_token = change_stream::get_resume_token(database, CHANGE_STREAM_ID)
+        .await
+        .unwrap_or_else(|error| panic!("failed to get initial resume token. error: {error}"));
 
     let options: ChangeStreamOptions = ChangeStreamOptions::builder()
         .full_document(Some(FullDocumentType::UpdateLookup))

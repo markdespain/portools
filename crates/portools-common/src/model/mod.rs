@@ -4,7 +4,6 @@ pub use currency::*;
 mod lot;
 pub use lot::*;
 
-use mongo_util::record::Record;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -61,12 +60,6 @@ impl Portfolio {
     }
 }
 
-impl Record<u32> for Portfolio {
-    fn id(&self) -> u32 {
-        self.id
-    }
-}
-
 #[derive(Debug)]
 pub enum PortfolioSummaryError {
     LotTotalCostError { cause: CurrencyError<Decimal> },
@@ -109,12 +102,6 @@ pub enum GroupSummaryError {
 pub struct PortfolioSummary<T: Hash + Eq> {
     pub id: u32,
     pub group_to_summary: HashMap<T, GroupSummary>,
-}
-
-impl<T: Hash + Eq> Record<u32> for PortfolioSummary<T> {
-    fn id(&self) -> u32 {
-        self.id
-    }
 }
 
 #[cfg(test)]
