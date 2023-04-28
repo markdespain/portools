@@ -4,12 +4,18 @@ use mongodb::options::{FindOneAndReplaceOptions, FindOneOptions, ReadConcern, Wr
 use mongodb::Database;
 use mongodm::{sync_indexes, CollectionConfig, Model, ToRepository};
 
-pub trait Record : Model {
-    type IdType : Into<Bson>;
+/// Trait that is
+/// - has an "id" field that a uniquely identifies a record in persistent storage
+/// - is associated with a mongodm::Model, for ODM to and from persistent storage
+pub trait Record: Model {
+    /// the type of the ID field
+    type IdType: Into<Bson>;
 
+    /// returns the name of the ID field within persistent storage
     fn id_field() -> &'static str;
 
-    fn id(record: &Self) -> Self::IdType;
+    /// returns the value of the ID field
+    fn id(&self) -> Self::IdType;
 }
 
 pub async fn drop_and_create<M: Model>(db: &Database) -> Result<(), Error> {
@@ -21,7 +27,7 @@ pub async fn drop_and_create<M: Model>(db: &Database) -> Result<(), Error> {
 
 pub async fn upsert<R>(database: &Database, record: &R) -> Result<(), Error>
 where
-    R: Record
+    R: Record,
 {
     let filter = doc! { R::id_field() : R::id(record).into() };
     let options = FindOneAndReplaceOptions::builder()

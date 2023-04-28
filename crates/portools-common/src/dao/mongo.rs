@@ -78,8 +78,8 @@ impl Record for Portfolio {
         field!(id in Portfolio)
     }
 
-    fn id(record: &Portfolio) -> u32 {
-        record.id
+    fn id(&self) -> u32 {
+        self.id
     }
 }
 
@@ -100,14 +100,13 @@ impl Model for PortfolioSummary<AssetClass> {
 }
 
 impl Record for PortfolioSummary<AssetClass> {
-
     type IdType = u32;
 
     fn id_field() -> &'static str {
         field!(id in PortfolioSummary<AssetClass>)
     }
 
-    fn id(record: &PortfolioSummary<AssetClass>) -> u32 {
-        record.id
+    fn id(&self) -> u32 {
+        self.id
     }
 }

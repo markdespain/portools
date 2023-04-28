@@ -26,8 +26,8 @@ impl Record for ResumeTokenRecord {
         field!(id in ResumeTokenRecord)
     }
 
-    fn id(record: &Self) -> String {
-        record.id.clone()
+    fn id(&self) -> String {
+        self.id.clone()
     }
 }
 
