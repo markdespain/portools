@@ -7,11 +7,9 @@ use mongodb::Client;
 
 use mongo_util::record::{drop_and_create, Record};
 use mongodm::field;
-use mongodm::{sync_indexes, CollectionConfig, Index, IndexOption, Indexes, Model};
+use mongodm::{sync_indexes, CollectionConfig, Indexes, Model};
 
 pub const DB_NAME: &str = "portools";
-const COLL_PORTFOLIO: &str = "portfolio";
-const PORTFOLIO_BY_ASSET_CLASS: &str = "portfolio_by_asset_class";
 
 #[derive(Clone, Debug)]
 pub struct MongoDao {
@@ -60,17 +58,18 @@ pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error
 pub struct PortfolioConfig;
 impl CollectionConfig for PortfolioConfig {
     fn collection_name() -> &'static str {
-        COLL_PORTFOLIO
+        "portfolio"
     }
 
     fn indexes() -> Indexes {
-        Indexes::new().with(Index::new(field!(id in Portfolio)).with_option(IndexOption::Unique))
-        // field! macro can be used as well
+        Indexes::new().with(Portfolio::id_index())
     }
 }
+
 impl Model for Portfolio {
     type CollConf = PortfolioConfig;
 }
+
 impl Record for Portfolio {
     type IdType = u32;
 
@@ -86,15 +85,14 @@ impl Record for Portfolio {
 pub struct PortfolioByAssetClassConfig;
 impl CollectionConfig for PortfolioByAssetClassConfig {
     fn collection_name() -> &'static str {
-        PORTFOLIO_BY_ASSET_CLASS
+        "portfolio_by_asset_class"
     }
 
     fn indexes() -> Indexes {
-        Indexes::new().with(
-            Index::new(field!(id in PortfolioSummary<AssetClass>)).with_option(IndexOption::Unique),
-        )
+        Indexes::new().with(PortfolioSummary::id_index())
     }
 }
+
 impl Model for PortfolioSummary<AssetClass> {
     type CollConf = PortfolioByAssetClassConfig;
 }

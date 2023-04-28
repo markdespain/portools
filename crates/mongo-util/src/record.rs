@@ -2,7 +2,7 @@ use mongodb::bson::{doc, Bson};
 use mongodb::error::Error;
 use mongodb::options::{FindOneAndReplaceOptions, FindOneOptions, ReadConcern, WriteConcern};
 use mongodb::Database;
-use mongodm::{sync_indexes, CollectionConfig, Model, ToRepository};
+use mongodm::{sync_indexes, CollectionConfig, Index, IndexOption, Model, ToRepository};
 
 /// Trait that is
 /// - has an "id" field that a uniquely identifies a record in persistent storage
@@ -16,6 +16,13 @@ pub trait Record: Model {
 
     /// returns the value of the ID field
     fn id(&self) -> Self::IdType;
+
+    /// Returns an Index describing a unique index on this Record's id field.
+    ///
+    /// This can be provide as part the associated Model's CollectionConfig::indexes()
+    fn id_index() -> Index {
+        Index::new(Self::id_field()).with_option(IndexOption::Unique)
+    }
 }
 
 pub async fn drop_and_create<M: Model>(db: &Database) -> Result<(), Error> {

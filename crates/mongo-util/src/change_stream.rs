@@ -3,15 +3,18 @@ use crate::record::Record;
 use mongodb::change_stream::event::ResumeToken;
 use mongodb::error::Error;
 use mongodb::Database;
-use mongodm::{field, sync_indexes, CollectionConfig, Index, IndexOption, Indexes, Model};
+use mongodm::{field, sync_indexes, CollectionConfig, Indexes, Model};
 use serde::{Deserialize, Serialize};
 
 pub const COLL_RESUME_TOKEN: &str = "resume_token";
 
+/// A record for a persisted resume token for a logical Mongo change stream within an application
 #[derive(Debug, Serialize, Deserialize)]
 struct ResumeTokenRecord {
-    // logical identifier for the change stream within an application
+    /// identifier for logical change stream within an application
     id: String,
+
+    /// the latest persisted resume token for logical change stream with the id
     resume_token: Option<ResumeToken>,
 }
 
@@ -38,9 +41,7 @@ impl CollectionConfig for ResumeTokenRecordConfig {
     }
 
     fn indexes() -> Indexes {
-        Indexes::new()
-            .with(Index::new(field!(id in ResumeTokenRecord)).with_option(IndexOption::Unique))
-        // field! macro can be used as well
+        Indexes::new().with(ResumeTokenRecord::id_index())
     }
 }
 
