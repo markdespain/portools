@@ -7,8 +7,18 @@ pub struct PortfolioSummaryManager {
 }
 
 impl PortfolioSummaryManager {
+
     // todo(): integration test coverage
-    pub async fn put_summary_by_asset_class(
+
+    pub async fn summarize(
+        &self,
+        portfolio: &Portfolio,
+    ) -> Result<(), AllocationServiceError> {
+        self.summarize_by_asset_class(portfolio).await?;
+        self.summarize_by_symbol(portfolio).await
+    }
+
+    pub async fn summarize_by_asset_class(
         &self,
         portfolio: &Portfolio,
     ) -> Result<(), AllocationServiceError> {
@@ -17,6 +27,19 @@ impl PortfolioSummaryManager {
             .map_err(|cause| AllocationServiceError::PortfolioSummaryError { cause })?;
         self.dao
             .put_summary_by_asset_class(&summary)
+            .await
+            .map_err(|cause| AllocationServiceError::DataAccessError { cause })
+    }
+
+    pub async fn summarize_by_symbol(
+        &self,
+        portfolio: &Portfolio,
+    ) -> Result<(), AllocationServiceError> {
+        let summary = portfolio
+            .get_summary_by_symbol()
+            .map_err(|cause| AllocationServiceError::PortfolioSummaryError { cause })?;
+        self.dao
+            .put_summary_by_symbol(&summary)
             .await
             .map_err(|cause| AllocationServiceError::DataAccessError { cause })
     }

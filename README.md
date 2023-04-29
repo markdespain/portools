@@ -29,7 +29,7 @@ cargo run
 
 ## Upload a CSV containing Lots
 ```
-curl -v -X PUT --data-binary @crates/portools-service/resource/example.csv http://localhost:8080/portfolio/1
+ curl -v -X PUT --data-binary @crates/portools-service/resource/example.csv http://localhost:8080/portfolio/1
 ```
 
 ## Get Lots

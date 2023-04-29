@@ -9,6 +9,7 @@ use std::sync::Mutex;
 pub struct InMemoryDao {
     portfolios: Mutex<HashMap<u32, Portfolio>>,
     portfolio_to_summary_by_asset_class: Mutex<HashMap<u32, PortfolioSummary<AssetClass>>>,
+    portfolio_to_summary_by_symbol: Mutex<HashMap<u32, PortfolioSummary<String>>>,
 }
 
 #[async_trait]
@@ -29,6 +30,15 @@ impl Dao for InMemoryDao {
         asset_allocation: &PortfolioSummary<AssetClass>,
     ) -> Result<(), Error> {
         let mut l = self.portfolio_to_summary_by_asset_class.lock().unwrap();
+        l.insert(asset_allocation.id, asset_allocation.clone());
+        Ok(())
+    }
+
+    async fn put_summary_by_symbol(
+        &self,
+        asset_allocation: &PortfolioSummary<String>,
+    ) -> Result<(), Error> {
+        let mut l = self.portfolio_to_summary_by_symbol.lock().unwrap();
         l.insert(asset_allocation.id, asset_allocation.clone());
         Ok(())
     }

@@ -64,7 +64,7 @@ async fn consume_next_change_event(
         OperationType::Insert | OperationType::Replace => {
             if let Some(ref portfolio) = event.full_document {
                 match allocation_service
-                    .put_summary_by_asset_class(portfolio)
+                    .summarize(portfolio)
                     .await
                 {
                     Err(error) => {

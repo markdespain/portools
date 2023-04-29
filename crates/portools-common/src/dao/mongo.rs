@@ -41,21 +41,38 @@ impl Dao for MongoDao {
         let database = self.client.database(DB_NAME);
         record::upsert(&database, asset_allocation).await
     }
+
+    async fn put_summary_by_symbol(
+        &self,
+        asset_allocation: &PortfolioSummary<String>,
+    ) -> Result<(), Error> {
+        let database = self.client.database(DB_NAME);
+        record::upsert(&database, asset_allocation).await
+    }
 }
 
 pub async fn drop_and_create_collections_and_indexes(client: &Client) -> Result<(), Error> {
     let db = client.database(DB_NAME);
     drop_and_create::<Portfolio>(&db).await?;
-    drop_and_create::<PortfolioSummary<AssetClass>>(&db).await
+    drop_and_create::<PortfolioSummaryByAssetClass>(&db).await?;
+    drop_and_create::<PortfolioSummaryBySymbol>(&db).await
 }
 
 pub async fn create_collections_and_indexes(client: &Client) -> Result<(), Error> {
     let db = client.database(DB_NAME);
     sync_indexes::<PortfolioConfig>(&db).await?;
-    sync_indexes::<PortfolioByAssetClassConfig>(&db).await
+    sync_indexes::<PortfolioSummaryByAssetClassConfig>(&db).await?;
+    sync_indexes::<PortfolioSummaryBySymbolConfig>(&db).await
 }
 
+// -------------------------------------------
+//   ODM configurations
+// -------------------------------------------
+
+// ODM for Portfolio
+
 pub struct PortfolioConfig;
+
 impl CollectionConfig for PortfolioConfig {
     fn collection_name() -> &'static str {
         "portfolio"
@@ -82,26 +99,63 @@ impl Record for Portfolio {
     }
 }
 
-pub struct PortfolioByAssetClassConfig;
-impl CollectionConfig for PortfolioByAssetClassConfig {
+// ODM for Portfolio Summary By Asset Class
+
+type PortfolioSummaryByAssetClass = PortfolioSummary<AssetClass>;
+
+pub struct PortfolioSummaryByAssetClassConfig;
+
+impl CollectionConfig for PortfolioSummaryByAssetClassConfig {
     fn collection_name() -> &'static str {
         "portfolio_by_asset_class"
     }
 
     fn indexes() -> Indexes {
-        Indexes::new().with(PortfolioSummary::id_index())
+        Indexes::new().with(PortfolioSummaryByAssetClass::id_index())
     }
 }
 
-impl Model for PortfolioSummary<AssetClass> {
-    type CollConf = PortfolioByAssetClassConfig;
+impl Model for PortfolioSummaryByAssetClass {
+    type CollConf = PortfolioSummaryByAssetClassConfig;
 }
 
-impl Record for PortfolioSummary<AssetClass> {
+impl Record for PortfolioSummaryByAssetClass {
     type IdType = u32;
 
     fn id_field() -> &'static str {
-        field!(id in PortfolioSummary<AssetClass>)
+        field!(id in PortfolioSummaryByAssetClass)
+    }
+
+    fn id(&self) -> u32 {
+        self.id
+    }
+}
+
+// ODM for Portfolio Summary By Symbol
+
+type PortfolioSummaryBySymbol = PortfolioSummary<String>;
+
+pub struct PortfolioSummaryBySymbolConfig;
+
+impl CollectionConfig for PortfolioSummaryBySymbolConfig {
+    fn collection_name() -> &'static str {
+        "portfolio_by_symbol"
+    }
+
+    fn indexes() -> Indexes {
+        Indexes::new().with(PortfolioSummaryBySymbol::id_index())
+    }
+}
+
+impl Model for PortfolioSummaryBySymbol {
+    type CollConf = PortfolioSummaryBySymbolConfig;
+}
+
+impl Record for PortfolioSummaryBySymbol {
+    type IdType = u32;
+
+    fn id_field() -> &'static str {
+        field!(id in PortfolioSummaryBySymbol)
     }
 
     fn id(&self) -> u32 {

@@ -15,4 +15,9 @@ pub trait Dao: Send + Sync {
         &self,
         asset_allocation: &PortfolioSummary<AssetClass>,
     ) -> Result<(), Error>;
+
+    async fn put_summary_by_symbol(
+        &self,
+        asset_allocation: &PortfolioSummary<String>,
+    ) -> Result<(), Error>;
 }
